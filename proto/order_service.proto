@@ -1,0 +1,114 @@
+syntax = "proto3";
+
+package order;
+
+option go_package = "glovo-backend/proto/gen/order";
+
+// Order Service gRPC API
+service OrderService {
+  // Get order by ID
+  rpc GetOrder(GetOrderRequest) returns (GetOrderResponse);
+  
+  // Update order status
+  rpc UpdateOrderStatus(UpdateOrderStatusRequest) returns (UpdateOrderStatusResponse);
+  
+  // Create order (internal)
+  rpc CreateOrder(CreateOrderRequest) returns (CreateOrderResponse);
+  
+  // Get orders by status
+  rpc GetOrdersByStatus(GetOrdersByStatusRequest) returns (GetOrdersByStatusResponse);
+}
+
+// Messages
+message GetOrderRequest {
+  string order_id = 1;
+}
+
+message GetOrderResponse {
+  Order order = 1;
+  bool success = 2;
+  string error = 3;
+}
+
+message UpdateOrderStatusRequest {
+  string order_id = 1;
+  string status = 2;
+  string updated_by = 3;
+  map<string, string> metadata = 4;
+}
+
+message UpdateOrderStatusResponse {
+  bool success = 1;
+  string error = 2;
+}
+
+message CreateOrderRequest {
+  string customer_id = 1;
+  string store_id = 2;
+  repeated OrderItem items = 3;
+  Address delivery_address = 4;
+  string payment_method_id = 5;
+  double delivery_fee = 6;
+  string notes = 7;
+}
+
+message CreateOrderResponse {
+  Order order = 1;
+  bool success = 2;
+  string error = 3;
+}
+
+message GetOrdersByStatusRequest {
+  string status = 1;
+  int32 limit = 2;
+  int32 offset = 3;
+}
+
+message GetOrdersByStatusResponse {
+  repeated Order orders = 1;
+}
+
+message Order {
+  string id = 1;
+  string customer_id = 2;
+  string store_id = 3;
+  repeated OrderItem items = 4;
+  string status = 5;
+  double subtotal = 6;
+  double delivery_fee = 7;
+  double tax = 8;
+  double total = 9;
+  Address delivery_address = 10;
+  PaymentInfo payment_info = 11;
+  int64 created_at = 12;
+  int64 updated_at = 13;
+  int64 estimated_delivery_time = 14;
+}
+
+message OrderItem {
+  string id = 1;
+  string product_id = 2;
+  string name = 3;
+  int32 quantity = 4;
+  double price = 5;
+  repeated string options = 6;
+  string notes = 7;
+}
+
+message Address {
+  string street = 1;
+  string city = 2;
+  string state = 3;
+  string postal_code = 4;
+  string country = 5;
+  double latitude = 6;
+  double longitude = 7;
+  string instructions = 8;
+}
+
+message PaymentInfo {
+  string payment_method_id = 1;
+  string status = 2;
+  string transaction_id = 3;
+  double amount = 4;
+}

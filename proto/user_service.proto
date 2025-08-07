@@ -1,0 +1,77 @@
+syntax = "proto3";
+
+package user;
+
+option go_package = "glovo-backend/proto/gen/user";
+
+// User Service gRPC API
+service UserService {
+  // Get user information by ID
+  rpc GetUser(GetUserRequest) returns (GetUserResponse);
+  
+  // Validate user exists and is active
+  rpc ValidateUser(ValidateUserRequest) returns (ValidateUserResponse);
+  
+  // Get users by IDs (batch operation)
+  rpc GetUsersBatch(GetUsersBatchRequest) returns (GetUsersBatchResponse);
+  
+  // Update user status (for admin operations)
+  rpc UpdateUserStatus(UpdateUserStatusRequest) returns (UpdateUserStatusResponse);
+}
+
+// Messages
+message GetUserRequest {
+  string user_id = 1;
+}
+
+message GetUserResponse {
+  User user = 1;
+  bool success = 2;
+  string error = 3;
+}
+
+message ValidateUserRequest {
+  string user_id = 1;
+}
+
+message ValidateUserResponse {
+  bool is_valid = 1;
+  bool is_active = 2;
+  string role = 3;
+}
+
+message GetUsersBatchRequest {
+  repeated string user_ids = 1;
+}
+
+message GetUsersBatchResponse {
+  repeated User users = 1;
+}
+
+message UpdateUserStatusRequest {
+  string user_id = 1;
+  string status = 2;
+  string reason = 3;
+}
+
+message UpdateUserStatusResponse {
+  bool success = 1;
+  string error = 2;
+}
+
+message User {
+  string id = 1;
+  string phone = 2;
+  string email = 3;
+  string role = 4;
+  UserProfile profile = 5;
+  string status = 6;
+  int64 created_at = 7;
+  int64 updated_at = 8;
+}
+
+message UserProfile {
+  string first_name = 1;
+  string last_name = 2;
+  string avatar = 3;
+}

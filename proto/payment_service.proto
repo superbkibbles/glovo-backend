@@ -1,0 +1,102 @@
+syntax = "proto3";
+
+package payment;
+
+option go_package = "glovo-backend/proto/gen/payment";
+
+// Payment Service gRPC API
+service PaymentService {
+  // Process payment
+  rpc ProcessPayment(ProcessPaymentRequest) returns (ProcessPaymentResponse);
+  
+  // Validate payment method
+  rpc ValidatePaymentMethod(ValidatePaymentMethodRequest) returns (ValidatePaymentMethodResponse);
+  
+  // Get wallet balance
+  rpc GetWalletBalance(GetWalletBalanceRequest) returns (GetWalletBalanceResponse);
+  
+  // Process refund
+  rpc ProcessRefund(ProcessRefundRequest) returns (ProcessRefundResponse);
+  
+  // Calculate commission
+  rpc CalculateCommission(CalculateCommissionRequest) returns (CalculateCommissionResponse);
+}
+
+// Messages
+message ProcessPaymentRequest {
+  string order_id = 1;
+  string customer_id = 2;
+  string payment_method_id = 3;
+  double amount = 4;
+  string currency = 5;
+  string description = 6;
+  map<string, string> metadata = 7;
+}
+
+message ProcessPaymentResponse {
+  bool success = 1;
+  string transaction_id = 2;
+  string status = 3;
+  double amount = 4;
+  double fee = 5;
+  double net_amount = 6;
+  string error = 7;
+  int64 processed_at = 8;
+}
+
+message ValidatePaymentMethodRequest {
+  string payment_method_id = 1;
+  string user_id = 2;
+  double amount = 3;
+}
+
+message ValidatePaymentMethodResponse {
+  bool is_valid = 1;
+  bool is_active = 2;
+  bool has_sufficient_funds = 3;
+  string error = 4;
+}
+
+message GetWalletBalanceRequest {
+  string user_id = 1;
+}
+
+message GetWalletBalanceResponse {
+  double balance = 1;
+  double pending_balance = 2;
+  string currency = 3;
+  bool success = 4;
+  string error = 5;
+}
+
+message ProcessRefundRequest {
+  string transaction_id = 1;
+  double amount = 2;
+  string reason = 3;
+  string processed_by = 4;
+}
+
+message ProcessRefundResponse {
+  bool success = 1;
+  string refund_transaction_id = 2;
+  double refunded_amount = 3;
+  string error = 4;
+  int64 processed_at = 5;
+}
+
+message CalculateCommissionRequest {
+  string order_id = 1;
+  double order_amount = 2;
+  double delivery_fee = 3;
+  string merchant_id = 4;
+  string driver_id = 5;
+}
+
+message CalculateCommissionResponse {
+  double platform_fee = 1;
+  double merchant_fee = 2;
+  double driver_fee = 3;
+  double net_to_merchant = 4;
+  double net_to_driver = 5;
+  string commission_id = 6;
+}

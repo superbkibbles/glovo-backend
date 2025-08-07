@@ -1,0 +1,109 @@
+syntax = "proto3";
+
+package location;
+
+option go_package = "glovo-backend/proto/gen/location";
+
+// Location Service gRPC API
+service LocationService {
+  // Update driver location (real-time)
+  rpc UpdateDriverLocation(UpdateDriverLocationRequest) returns (UpdateDriverLocationResponse);
+  
+  // Get driver location
+  rpc GetDriverLocation(GetDriverLocationRequest) returns (GetDriverLocationResponse);
+  
+  // Find nearby drivers
+  rpc GetNearbyDrivers(GetNearbyDriversRequest) returns (GetNearbyDriversResponse);
+  
+  // Stream driver location updates
+  rpc StreamDriverLocation(StreamDriverLocationRequest) returns (stream LocationUpdate);
+  
+  // Update delivery route progress
+  rpc UpdateRouteProgress(UpdateRouteProgressRequest) returns (UpdateRouteProgressResponse);
+}
+
+// Messages
+message UpdateDriverLocationRequest {
+  string driver_id = 1;
+  double latitude = 2;
+  double longitude = 3;
+  double heading = 4;
+  double speed = 5;
+  double accuracy = 6;
+  int64 timestamp = 7;
+}
+
+message UpdateDriverLocationResponse {
+  bool success = 1;
+  string error = 2;
+}
+
+message GetDriverLocationRequest {
+  string driver_id = 1;
+}
+
+message GetDriverLocationResponse {
+  DriverLocation location = 1;
+  bool success = 2;
+  string error = 3;
+}
+
+message GetNearbyDriversRequest {
+  double latitude = 1;
+  double longitude = 2;
+  double radius_km = 3;
+  int32 limit = 4;
+  string status_filter = 5;
+}
+
+message GetNearbyDriversResponse {
+  repeated NearbyDriver drivers = 1;
+}
+
+message StreamDriverLocationRequest {
+  string driver_id = 1;
+}
+
+message LocationUpdate {
+  string driver_id = 1;
+  double latitude = 2;
+  double longitude = 3;
+  double heading = 4;
+  double speed = 5;
+  int64 timestamp = 6;
+  string status = 7;
+}
+
+message UpdateRouteProgressRequest {
+  string order_id = 1;
+  string driver_id = 2;
+  double current_latitude = 3;
+  double current_longitude = 4;
+  string status = 5;
+}
+
+message UpdateRouteProgressResponse {
+  bool success = 1;
+  string error = 2;
+  int32 estimated_minutes_remaining = 3;
+}
+
+message DriverLocation {
+  string driver_id = 1;
+  double latitude = 2;
+  double longitude = 3;
+  double heading = 4;
+  double speed = 5;
+  double accuracy = 6;
+  string status = 7;
+  int64 updated_at = 8;
+}
+
+message NearbyDriver {
+  string driver_id = 1;
+  double latitude = 2;
+  double longitude = 3;
+  double distance_km = 4;
+  string status = 5;
+  double rating = 6;
+}
