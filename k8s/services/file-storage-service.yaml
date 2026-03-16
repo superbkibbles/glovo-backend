@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: file-storage-service
+  namespace: food-delivery-system
+  labels:
+    app: file-storage-service
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: file-storage-service
+  template:
+    metadata:
+      labels:
+        app: file-storage-service
+    spec:
+      volumes:
+        - name: uploads
+          persistentVolumeClaim:
+            claimName: file-storage-pvc
+      containers:
+        - name: file-storage-service
+          image: food-delivery-file-storage-service:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 50054
+          envFrom:
+            - configMapRef:
+                name: food-delivery-config
+            - secretRef:
+                name: food-delivery-secrets
+          volumeMounts:
+            - name: uploads
+              mountPath: /app/uploads
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: file-storage-service
+  namespace: food-delivery-system
+spec:
+  selector:
+    app: file-storage-service
+  ports:
+    - port: 50054
+      targetPort: 50054

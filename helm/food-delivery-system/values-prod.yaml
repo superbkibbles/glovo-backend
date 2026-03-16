@@ -1,0 +1,10 @@
+# Production overrides
+global:
+  namespace: food-delivery-system-helm
+  imagePullPolicy: Always
+
+config:
+  env: "production"
+
+# Override secrets in production via --set or secret management
+# helm install -f values-prod.yaml --set secrets.jwtSecret=... --set secrets.passwordPepper=...

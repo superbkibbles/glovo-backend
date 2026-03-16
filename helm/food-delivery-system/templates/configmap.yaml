@@ -1,0 +1,32 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: food-delivery-config
+  namespace: {{ include "food-delivery-system.namespace" . }}
+  labels:
+    {{- include "food-delivery-system.labels" . | nindent 4 }}
+data:
+  MONGO_DB: {{ .Values.config.mongoDb | quote }}
+  ENV: {{ .Values.config.env | quote }}
+  AUTH_SERVICE_GRPC_PORT: {{ .Values.config.ports.authService | quote }}
+  USER_SERVICE_GRPC_PORT: {{ .Values.config.ports.userService | quote }}
+  NOTIFICATION_SERVICE_GRPC_PORT: {{ .Values.config.ports.notificationService | quote }}
+  FILE_STORAGE_SERVICE_GRPC_PORT: {{ .Values.config.ports.fileStorageService | quote }}
+  RESTAURANT_SERVICE_GRPC_PORT: {{ .Values.config.ports.restaurantService | quote }}
+  ORDER_SERVICE_GRPC_PORT: {{ .Values.config.ports.orderService | quote }}
+  DELIVERY_SERVICE_GRPC_PORT: {{ .Values.config.ports.deliveryService | quote }}
+  SETTINGS_SERVICE_GRPC_PORT: {{ .Values.config.ports.settingsService | quote }}
+  GATEWAY_HTTP_PORT: {{ .Values.config.ports.gatewayHttp | quote }}
+  AUTH_SERVICE_ADDR: {{ .Values.config.addresses.authService | quote }}
+  USER_SERVICE_ADDR: {{ .Values.config.addresses.userService | quote }}
+  NOTIFICATION_SERVICE_ADDR: {{ .Values.config.addresses.notificationService | quote }}
+  FILE_STORAGE_SERVICE_ADDR: {{ .Values.config.addresses.fileStorageService | quote }}
+  RESTAURANT_SERVICE_ADDR: {{ .Values.config.addresses.restaurantService | quote }}
+  ORDER_SERVICE_ADDR: {{ .Values.config.addresses.orderService | quote }}
+  DELIVERY_SERVICE_ADDR: {{ .Values.config.addresses.deliveryService | quote }}
+  SETTINGS_SERVICE_ADDR: {{ .Values.config.addresses.settingsService | quote }}
+  UPLOAD_PATH: {{ .Values.config.uploadPath | quote }}
+  MAX_UPLOAD_SIZE: {{ .Values.config.maxUploadSize | default "52428800" | quote }}
+  GATEWAY_BASE_URL: {{ .Values.config.gatewayBaseUrl | quote }}
+  FIREBASE_PROJECT_ID: {{ .Values.config.firebaseProjectId | quote }}
+  FIREBASE_CREDENTIALS_PATH: {{ .Values.config.firebaseCredentialsPath | quote }}

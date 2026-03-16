@@ -1,0 +1,15 @@
+go 1.23.0
+
+use (
+	./pkg
+	./proto
+	./services/auth-service
+	./services/delivery-service
+	./services/file-storage-service
+	./services/gateway
+	./services/notification-service
+	./services/order-service
+	./services/restaurant-service
+	./services/user-service
+	./services/settings-service
+)

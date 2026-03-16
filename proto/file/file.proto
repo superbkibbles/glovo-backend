@@ -1,0 +1,73 @@
+syntax = "proto3";
+
+package file;
+
+option go_package = "github.com/mendmzury/food-delivery/proto/file";
+
+import "google/protobuf/timestamp.proto";
+import "proto/common/common.proto";
+
+service FileService {
+  rpc UploadFile(UploadFileRequest) returns (File);
+  rpc GetFile(GetFileRequest) returns (File);
+  rpc ListFiles(ListFilesRequest) returns (ListFilesResponse);
+  rpc DeleteFile(DeleteFileRequest) returns (common.SuccessResponse);
+  rpc GetFileURL(GetFileURLRequest) returns (GetFileURLResponse);
+  rpc GetFileContent(GetFileContentRequest) returns (GetFileContentResponse);
+}
+
+message File {
+  string id = 1;
+  string filename = 2;
+  string original_name = 3;
+  string path = 4;
+  string mime_type = 5;
+  int64 size = 6;
+  string uploaded_by_id = 7;
+  string uploaded_by_name = 8;
+  google.protobuf.Timestamp created_at = 9;
+}
+
+message UploadFileRequest {
+  string filename = 1;
+  bytes content = 2;
+  string mime_type = 3;
+}
+
+message GetFileRequest {
+  string id = 1;
+}
+
+message ListFilesRequest {
+  common.PaginationRequest pagination = 1;
+  string search = 2;
+  string mime_type = 3;
+}
+
+message ListFilesResponse {
+  repeated File files = 1;
+  common.PaginationMeta pagination = 2;
+}
+
+message DeleteFileRequest {
+  string id = 1;
+}
+
+message GetFileURLRequest {
+  string id = 1;
+}
+
+message GetFileURLResponse {
+  string url = 1;
+  google.protobuf.Timestamp expires_at = 2;
+}
+
+message GetFileContentRequest {
+  string id = 1;
+}
+
+message GetFileContentResponse {
+  bytes content = 1;
+  string mime_type = 2;
+  string filename = 3;
+}

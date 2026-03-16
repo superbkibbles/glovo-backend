@@ -1,0 +1,55 @@
+# Environment
+.env
+.env.local
+.env.*.local
+!.env.example
+!.env.local.example
+
+# Secrets
+firebase-credentials.json
+*-firebase-adminsdk-*.json
+food-delivery-4479f-firebase-adminsdk-fbsvc-e96b9be0ce.json
+*.pem
+food-delivery-dash/
+
+# File uploads
+uploads/
+
+# Go
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+/bin/
+/dist/
+/vendor/
+
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Vercel
+.vercel
+
+# Coverage
+coverage/
+*.out
+
+# Tilt / Helm (local state)
+.tilt/

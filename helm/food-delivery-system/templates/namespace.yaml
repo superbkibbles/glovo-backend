@@ -1,0 +1,17 @@
+{{- if .Values.global.createNamespace }}
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ include "food-delivery-system.namespace" . }}
+  labels:
+    app.kubernetes.io/name: {{ include "food-delivery-system.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+{{- with .Values.global.labels }}
+{{- toYaml . | nindent 4 }}
+{{- end }}
+{{- with .Values.global.annotations }}
+  annotations:
+{{- toYaml . | nindent 4 }}
+{{- end }}
+{{- end }}

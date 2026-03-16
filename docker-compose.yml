@@ -1,0 +1,209 @@
+services:
+  # Infrastructure
+  postgres:
+    image: postgres:16-alpine
+    container_name: food-delivery-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=food_delivery
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  mongodb:
+    image: mongo:7.0
+    container_name: food-delivery-mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+
+  redis:
+    image: redis:7.2-alpine
+    container_name: food-delivery-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  # Microservices
+  auth-service:
+    build:
+      context: .
+      dockerfile: services/auth-service/Dockerfile
+    container_name: food-delivery-auth-service
+    ports:
+      - "50051:50051"
+    environment:
+      - DATABASE_URL=postgres://postgres:postgres@postgres:5432/food_delivery?sslmode=disable
+      - REDIS_URI=redis:6379
+      - JWT_SECRET=${JWT_SECRET:-default-secret-change-me}
+      - PASSWORD_PEPPER=${PASSWORD_PEPPER:-default-pepper-change-me}
+      - AUTH_SERVICE_GRPC_PORT=50051
+      - FIREBASE_PROJECT_ID=${FIREBASE_PROJECT_ID:-food-delivery-4479f}
+      - FIREBASE_CREDENTIALS_PATH=${FIREBASE_CREDENTIALS_PATH:-/app/firebase-credentials.json}
+      - ENV=development
+    volumes:
+      - ./food-delivery-4479f-firebase-adminsdk-fbsvc-e96b9be0ce.json:/app/firebase-credentials.json:ro
+    depends_on:
+      - postgres
+      - redis
+
+  user-service:
+    build:
+      context: .
+      dockerfile: services/user-service/Dockerfile
+    container_name: food-delivery-user-service
+    ports:
+      - "50052:50052"
+    environment:
+      - DATABASE_URL=postgres://postgres:postgres@postgres:5432/food_delivery?sslmode=disable
+      - USER_SERVICE_GRPC_PORT=50052
+      - ENV=development
+    depends_on:
+      - postgres
+
+  notification-service:
+    build:
+      context: .
+      dockerfile: services/notification-service/Dockerfile
+    container_name: food-delivery-notification-service
+    ports:
+      - "50053:50053"
+    environment:
+      - MONGO_URI=mongodb://mongodb:27017
+      - MONGO_DB=food_delivery
+      - NOTIFICATION_SERVICE_GRPC_PORT=50053
+      - UPLOAD_PATH=/app/uploads
+      - MAX_UPLOAD_SIZE=52428800
+      - GATEWAY_BASE_URL=http://gateway:8080
+      - FIREBASE_PROJECT_ID=${FIREBASE_PROJECT_ID:-food-delivery-4479f}
+      - FIREBASE_CREDENTIALS_PATH=${FIREBASE_CREDENTIALS_PATH:-/app/firebase-credentials.json}
+      - ENV=development
+    volumes:
+      - uploads_data:/app/uploads
+      - ./food-delivery-4479f-firebase-adminsdk-fbsvc-e96b9be0ce.json:/app/firebase-credentials.json:ro
+    depends_on:
+      - mongodb
+
+  file-storage-service:
+    build:
+      context: .
+      dockerfile: services/file-storage-service/Dockerfile
+    container_name: food-delivery-file-storage-service
+    ports:
+      - "50054:50054"
+    environment:
+      - MONGO_URI=mongodb://mongodb:27017
+      - MONGO_DB=food_delivery
+      - FILE_STORAGE_SERVICE_GRPC_PORT=50054
+      - UPLOAD_PATH=/app/uploads
+      - MAX_UPLOAD_SIZE=52428800
+      - ENV=development
+    volumes:
+      - uploads_data:/app/uploads
+    depends_on:
+      - mongodb
+
+  restaurant-service:
+    build:
+      context: .
+      dockerfile: services/restaurant-service/Dockerfile
+    container_name: food-delivery-restaurant-service
+    ports:
+      - "50055:50055"
+    environment:
+      - DATABASE_URL=postgres://postgres:postgres@postgres:5432/food_delivery?sslmode=disable
+      - RESTAURANT_SERVICE_GRPC_PORT=50055
+      - ENV=development
+    depends_on:
+      - postgres
+
+  order-service:
+    build:
+      context: .
+      dockerfile: services/order-service/Dockerfile
+    container_name: food-delivery-order-service
+    ports:
+      - "50056:50056"
+    environment:
+      - DATABASE_URL=postgres://postgres:postgres@postgres:5432/food_delivery?sslmode=disable
+      - ORDER_SERVICE_GRPC_PORT=50056
+      - NOTIFICATION_SERVICE_ADDR=notification-service:50053
+      - GATEWAY_BASE_URL=http://gateway:8080
+      - ENV=development
+    depends_on:
+      - postgres
+      - notification-service
+
+  delivery-service:
+    build:
+      context: .
+      dockerfile: services/delivery-service/Dockerfile
+    container_name: food-delivery-delivery-service
+    ports:
+      - "50057:50057"
+    environment:
+      - DATABASE_URL=postgres://postgres:postgres@postgres:5432/food_delivery?sslmode=disable
+      - REDIS_URI=redis:6379
+      - DELIVERY_SERVICE_GRPC_PORT=50057
+      - ENV=development
+    depends_on:
+      - postgres
+      - redis
+
+  gateway:
+    build:
+      context: .
+      dockerfile: services/gateway/Dockerfile
+    container_name: food-delivery-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      - JWT_SECRET=${JWT_SECRET:-default-secret-change-me}
+      - GATEWAY_HTTP_PORT=8080
+      - GATEWAY_BASE_URL=http://gateway:8080
+      - AUTH_SERVICE_ADDR=auth-service:50051
+      - USER_SERVICE_ADDR=user-service:50052
+      - NOTIFICATION_SERVICE_ADDR=notification-service:50053
+      - FILE_STORAGE_SERVICE_ADDR=file-storage-service:50054
+      - RESTAURANT_SERVICE_ADDR=restaurant-service:50055
+      - ORDER_SERVICE_ADDR=order-service:50056
+      - DELIVERY_SERVICE_ADDR=delivery-service:50057
+      - ENV=development
+    depends_on:
+      - auth-service
+      - user-service
+      - notification-service
+      - file-storage-service
+      - restaurant-service
+      - order-service
+      - delivery-service
+
+  # Seed service (runs once to seed database)
+  seed:
+    build:
+      context: .
+      dockerfile: cmd/seed/Dockerfile
+    container_name: food-delivery-seed
+    environment:
+      - DATABASE_URL=postgres://postgres:postgres@postgres:5432/food_delivery?sslmode=disable
+      - MONGO_URI=mongodb://mongodb:27017
+      - MONGO_DB=food_delivery
+      - JWT_SECRET=${JWT_SECRET:-default-secret-change-me}
+      - PASSWORD_PEPPER=${PASSWORD_PEPPER:-default-pepper-change-me}
+      - SUPERADMIN_USERNAME=${SUPERADMIN_USERNAME:-admin}
+      - SUPERADMIN_PASSWORD=${SUPERADMIN_PASSWORD:-Admin@123}
+      - ENV=development
+    depends_on:
+      - postgres
+      - mongodb
+    restart: "no"
+
+volumes:
+  postgres_data:
+  mongodb_data:
+  redis_data:
+  uploads_data:

@@ -1,0 +1,146 @@
+syntax = "proto3";
+
+package auth;
+
+option go_package = "github.com/mendmzury/food-delivery/proto/auth";
+
+service AuthService {
+  rpc Login(LoginRequest) returns (LoginResponse);
+  rpc ValidateToken(ValidateTokenRequest) returns (ValidateTokenResponse);
+  rpc ChangePassword(ChangePasswordRequest) returns (ChangePasswordResponse);
+  rpc ResetPassword(ResetPasswordRequest) returns (ResetPasswordResponse);
+  rpc ForgotPassword(ForgotPasswordRequest) returns (ForgotPasswordResponse);
+  rpc RefreshToken(RefreshTokenRequest) returns (RefreshTokenResponse);
+  rpc Logout(LogoutRequest) returns (LogoutResponse);
+
+  // Customer signup (creates account if new)
+  rpc SignUpWithPhone(SignUpWithPhoneRequest) returns (LoginResponse);
+  rpc SignUpWithGoogle(SignUpWithGoogleRequest) returns (LoginResponse);
+  rpc SignUpWithEmail(SignUpWithEmailRequest) returns (LoginResponse);
+
+  // Customer signin (OTP only - no password)
+  rpc SignInWithPhone(SignInWithPhoneRequest) returns (LoginResponse);
+  rpc SignInWithEmail(SignInWithEmailRequest) returns (LoginResponse);
+
+  // OTP delivery - backend sends OTP to phone or email
+  rpc SendOTP(SendOTPRequest) returns (SendOTPResponse);
+}
+
+message LoginRequest {
+  string username = 1;
+  string password = 2;
+}
+
+message LoginResponse {
+  string token = 1;
+  string refresh_token = 2;
+  int64 expires_in = 3;
+  UserInfo user = 4;
+}
+
+message UserInfo {
+  string id = 1;
+  string username = 2;
+  string name = 3;
+  string company_id = 4;
+  string company_name = 5;
+  string role_id = 6;
+  string role_name = 7;
+  bool is_superadmin = 8;
+  repeated string permissions = 9;
+  string user_type = 10;  // customer, restaurant_owner, driver, admin
+  string email = 11;
+  string phone_number = 12;
+}
+
+message ValidateTokenRequest {
+  string token = 1;
+}
+
+message ValidateTokenResponse {
+  bool valid = 1;
+  UserInfo user = 2;
+}
+
+message ChangePasswordRequest {
+  string old_password = 1;
+  string new_password = 2;
+}
+
+message ChangePasswordResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message ResetPasswordRequest {
+  string user_id = 1;
+  string new_password = 2;
+}
+
+message ResetPasswordResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message ForgotPasswordRequest {
+  string username = 1;
+}
+
+message ForgotPasswordResponse {
+  string admin_phone = 1;
+  string message = 2;
+}
+
+message RefreshTokenRequest {
+  string refresh_token = 1;
+}
+
+message RefreshTokenResponse {
+  string token = 1;
+  string refresh_token = 2;
+  int64 expires_in = 3;
+  UserInfo user = 4;
+}
+
+message LogoutRequest {
+  string token = 1;
+}
+
+message LogoutResponse {
+  bool success = 1;
+}
+
+message SignUpWithPhoneRequest {
+  string phone_number = 1;
+  string otp = 2;
+}
+
+message SignUpWithGoogleRequest {
+  string id_token = 1;
+}
+
+message SignUpWithEmailRequest {
+  string email = 1;
+  string otp = 2;
+  string name = 3;
+}
+
+message SignInWithPhoneRequest {
+  string phone_number = 1;
+  string otp = 2;
+}
+
+message SignInWithEmailRequest {
+  string email = 1;
+  string otp = 2;
+}
+
+message SendOTPRequest {
+  string phone_number = 1;
+  string email = 2;
+}
+
+message SendOTPResponse {
+  bool success = 1;
+  string message = 2;
+}

@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: food-delivery-config
+  namespace: food-delivery-system
+data:
+  MONGO_DB: "food_delivery"
+  ENV: "production"
+  AUTH_SERVICE_GRPC_PORT: "50051"
+  USER_SERVICE_GRPC_PORT: "50052"
+  NOTIFICATION_SERVICE_GRPC_PORT: "50053"
+  FILE_STORAGE_SERVICE_GRPC_PORT: "50054"
+  RESTAURANT_SERVICE_GRPC_PORT: "50055"
+  ORDER_SERVICE_GRPC_PORT: "50056"
+  DELIVERY_SERVICE_GRPC_PORT: "50057"
+  GATEWAY_HTTP_PORT: "8080"
+  AUTH_SERVICE_ADDR: "auth-service:50051"
+  USER_SERVICE_ADDR: "user-service:50052"
+  NOTIFICATION_SERVICE_ADDR: "notification-service:50053"
+  FILE_STORAGE_SERVICE_ADDR: "file-storage-service:50054"
+  RESTAURANT_SERVICE_ADDR: "restaurant-service:50055"
+  ORDER_SERVICE_ADDR: "order-service:50056"
+  DELIVERY_SERVICE_ADDR: "delivery-service:50057"
+  SETTINGS_SERVICE_GRPC_PORT: "50058"
+  SETTINGS_SERVICE_ADDR: "settings-service:50058"
+  UPLOAD_PATH: "/app/uploads"
+  MAX_UPLOAD_SIZE: "52428800"
+  GATEWAY_BASE_URL: "http://gateway:8080"
+  FIREBASE_PROJECT_ID: "food-delivery"
+  FIREBASE_CREDENTIALS_PATH: "/app/firebase-credentials.json"

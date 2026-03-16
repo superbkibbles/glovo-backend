@@ -1,0 +1,813 @@
+basePath: /api/v1
+host: localhost:8080
+info:
+  contact: {}
+  description: Food Delivery Backend API - Restaurants, orders, delivery
+  title: Food Delivery API
+  version: "1.0"
+paths:
+  /auth/change-password:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Change password
+        in: body
+        name: request
+        required: true
+        schema:
+          properties:
+            new_password:
+              type: string
+            old_password:
+              type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Change password
+      tags:
+      - auth
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Login with username and password
+      parameters:
+      - description: Login
+        in: body
+        name: request
+        required: true
+        schema:
+          properties:
+            password:
+              type: string
+            username:
+              type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+      summary: Admin login
+      tags:
+      - auth
+  /auth/logout:
+    post:
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Logout
+      tags:
+      - auth
+  /auth/me:
+    get:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get current user
+      tags:
+      - auth
+  /auth/refresh-token:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Refresh token
+        in: body
+        name: request
+        required: true
+        schema:
+          properties:
+            refresh_token:
+              type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+      summary: Refresh JWT token
+      tags:
+      - auth
+  /auth/send-otp:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Phone or email
+        in: body
+        name: request
+        required: true
+        schema:
+          properties:
+            email:
+              type: string
+            phone_number:
+              type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+      summary: Send OTP to phone or email
+      tags:
+      - auth
+  /auth/signin/email:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Signin
+        in: body
+        name: request
+        required: true
+        schema:
+          properties:
+            email:
+              type: string
+            otp:
+              type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+      summary: Customer signin with email
+      tags:
+      - auth
+  /auth/signin/google:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Google ID token
+        in: body
+        name: request
+        required: true
+        schema:
+          properties:
+            id_token:
+              type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+      summary: Customer signin with Google
+      tags:
+      - auth
+  /auth/signin/phone:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Signin
+        in: body
+        name: request
+        required: true
+        schema:
+          properties:
+            otp:
+              type: string
+            phone_number:
+              type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+      summary: Customer signin with phone
+      tags:
+      - auth
+  /auth/signup/email:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Signup
+        in: body
+        name: request
+        required: true
+        schema:
+          properties:
+            email:
+              type: string
+            name:
+              type: string
+            otp:
+              type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+      summary: Customer signup with email
+      tags:
+      - auth
+  /auth/signup/google:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Google ID token
+        in: body
+        name: request
+        required: true
+        schema:
+          properties:
+            id_token:
+              type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+      summary: Customer signup with Google
+      tags:
+      - auth
+  /auth/signup/phone:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Signup
+        in: body
+        name: request
+        required: true
+        schema:
+          properties:
+            otp:
+              type: string
+            phone_number:
+              type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+      summary: Customer signup with phone
+      tags:
+      - auth
+  /delivery/assign:
+    post:
+      responses:
+        "201":
+          description: Created
+          schema:
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Assign driver to order
+      tags:
+      - delivery
+  /delivery/assignments:
+    get:
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+      security:
+      - BearerAuth: []
+      summary: List delivery assignments
+      tags:
+      - delivery
+  /delivery/assignments/{id}/complete:
+    post:
+      parameters:
+      - description: Assignment ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Complete delivery
+      tags:
+      - delivery
+  /delivery/assignments/{id}/tracking-history:
+    get:
+      parameters:
+      - description: Assignment ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get tracking history
+      tags:
+      - delivery
+  /delivery/assignments/by:
+    get:
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get assignment by order_id
+      tags:
+      - delivery
+  /delivery/driver-locations:
+    get:
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+      security:
+      - BearerAuth: []
+      summary: List driver locations
+      tags:
+      - delivery
+  /delivery/location:
+    post:
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update driver location
+      tags:
+      - delivery
+  /orders:
+    get:
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+      security:
+      - BearerAuth: []
+      summary: List orders
+      tags:
+      - orders
+    post:
+      responses:
+        "201":
+          description: Created
+          schema:
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Create order
+      tags:
+      - orders
+  /orders/{id}:
+    get:
+      parameters:
+      - description: Order ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get order
+      tags:
+      - orders
+  /orders/{id}/cancel:
+    post:
+      parameters:
+      - description: Order ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Cancel order
+      tags:
+      - orders
+  /orders/{id}/status:
+    put:
+      parameters:
+      - description: Order ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update order status
+      tags:
+      - orders
+  /restaurants:
+    get:
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+      security:
+      - BearerAuth: []
+      summary: List restaurants
+      tags:
+      - restaurants
+    post:
+      responses:
+        "201":
+          description: Created
+          schema:
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Create restaurant
+      tags:
+      - restaurants
+  /restaurants/{id}:
+    delete:
+      parameters:
+      - description: Restaurant ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Delete restaurant
+      tags:
+      - restaurants
+    get:
+      parameters:
+      - description: Restaurant ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get restaurant
+      tags:
+      - restaurants
+    put:
+      parameters:
+      - description: Restaurant ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update restaurant
+      tags:
+      - restaurants
+  /restaurants/{id}/categories:
+    get:
+      parameters:
+      - description: Restaurant ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+      security:
+      - BearerAuth: []
+      summary: List categories
+      tags:
+      - restaurants
+  /restaurants/categories:
+    post:
+      responses:
+        "201":
+          description: Created
+          schema:
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Create category
+      tags:
+      - restaurants
+  /restaurants/menu-items:
+    get:
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+      security:
+      - BearerAuth: []
+      summary: List menu items
+      tags:
+      - restaurants
+    post:
+      responses:
+        "201":
+          description: Created
+          schema:
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Create menu item
+      tags:
+      - restaurants
+  /roles:
+    get:
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+      security:
+      - BearerAuth: []
+      summary: List roles
+      tags:
+      - roles
+  /roles/{id}:
+    get:
+      parameters:
+      - description: Role ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get role
+      tags:
+      - roles
+  /settings/commission:
+    get:
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get commission
+      tags:
+      - settings
+    put:
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update commission
+      tags:
+      - settings
+  /settings/operating-areas:
+    get:
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+      security:
+      - BearerAuth: []
+      summary: List operating areas
+      tags:
+      - settings
+    post:
+      responses:
+        "201":
+          description: Created
+          schema:
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Create operating area
+      tags:
+      - settings
+  /settings/operating-areas/{id}:
+    delete:
+      parameters:
+      - description: Area ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Delete operating area
+      tags:
+      - settings
+    put:
+      parameters:
+      - description: Area ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update operating area
+      tags:
+      - settings
+  /users:
+    get:
+      parameters:
+      - description: Page
+        in: query
+        name: page
+        type: integer
+      - description: Page size
+        in: query
+        name: page_size
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+      security:
+      - BearerAuth: []
+      summary: List users
+      tags:
+      - users
+    post:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Create user
+      tags:
+      - users
+  /users/{id}:
+    delete:
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Delete user
+      tags:
+      - users
+    get:
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get user
+      tags:
+      - users
+    put:
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update user
+      tags:
+      - users
+  /websocket/connections:
+    get:
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+      security:
+      - BearerAuth: []
+      summary: List WebSocket connections
+      tags:
+      - websocket
+securityDefinitions:
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

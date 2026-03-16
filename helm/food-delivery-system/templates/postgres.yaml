@@ -1,0 +1,72 @@
+{{- if .Values.postgres.enabled }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+  namespace: {{ include "food-delivery-system.namespace" . }}
+  labels:
+    app: postgres
+    {{- include "food-delivery-system.labels" . | nindent 4 }}
+spec:
+  serviceName: postgres
+  replicas: {{ .Values.postgres.replicas }}
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+        {{- include "food-delivery-system.labels" . | nindent 8 }}
+    spec:
+      containers:
+        - name: postgres
+          image: {{ printf "%s:%s" .Values.postgres.image.repository .Values.postgres.image.tag }}
+          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: food-delivery-secrets
+                  key: POSTGRES_USER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: food-delivery-secrets
+                  key: POSTGRES_PASSWORD
+            - name: POSTGRES_DB
+              valueFrom:
+                secretKeyRef:
+                  name: food-delivery-secrets
+                  key: POSTGRES_DB
+          volumeMounts:
+            - name: postgres-data
+              mountPath: /var/lib/postgresql/data
+          resources:
+            {{- toYaml .Values.postgres.resources | nindent 12 }}
+  volumeClaimTemplates:
+    - metadata:
+        name: postgres-data
+      spec:
+        accessModes: ["{{ .Values.postgres.storage.accessMode }}"]
+        resources:
+          requests:
+            storage: {{ .Values.postgres.storage.size }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  namespace: {{ include "food-delivery-system.namespace" . }}
+  labels:
+    app: postgres
+    {{- include "food-delivery-system.labels" . | nindent 4 }}
+spec:
+  selector:
+    app: postgres
+  ports:
+    - port: 5432
+      targetPort: 5432
+{{- end }}

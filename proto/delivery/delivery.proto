@@ -1,0 +1,97 @@
+syntax = "proto3";
+
+package delivery;
+
+option go_package = "github.com/mendmzury/food-delivery/proto/delivery";
+
+import "google/protobuf/timestamp.proto";
+import "proto/common/common.proto";
+
+service DeliveryService {
+  rpc AssignDriver(AssignDriverRequest) returns (DeliveryAssignment);
+  rpc GetAssignment(GetAssignmentRequest) returns (DeliveryAssignment);
+  rpc ListAssignments(ListAssignmentsRequest) returns (ListAssignmentsResponse);
+  rpc UpdateLocation(UpdateLocationRequest) returns (common.SuccessResponse);
+  rpc CompleteDelivery(CompleteDeliveryRequest) returns (DeliveryAssignment);
+  rpc GetTrackingHistory(GetTrackingHistoryRequest) returns (GetTrackingHistoryResponse);
+  rpc ListDriverLocations(ListDriverLocationsRequest) returns (ListDriverLocationsResponse);
+}
+
+enum AssignmentStatus {
+  ASSIGNMENT_STATUS_ASSIGNED = 0;
+  ASSIGNMENT_STATUS_PICKED_UP = 1;
+  ASSIGNMENT_STATUS_DELIVERED = 2;
+}
+
+message DeliveryAssignment {
+  string id = 1;
+  string order_id = 2;
+  string driver_id = 3;
+  string driver_name = 4;
+  AssignmentStatus status = 5;
+  double driver_lat = 6;
+  double driver_lng = 7;
+  google.protobuf.Timestamp assigned_at = 8;
+  google.protobuf.Timestamp picked_up_at = 9;
+  google.protobuf.Timestamp delivered_at = 10;
+}
+
+message AssignDriverRequest {
+  string order_id = 1;
+  string driver_id = 2;
+}
+
+message GetAssignmentRequest {
+  string id = 1;
+  string order_id = 2;
+}
+
+message ListAssignmentsRequest {
+  common.PaginationRequest pagination = 1;
+  string driver_id = 2;
+  AssignmentStatus status = 3;
+}
+
+message ListAssignmentsResponse {
+  repeated DeliveryAssignment assignments = 1;
+  common.PaginationMeta pagination = 2;
+}
+
+message UpdateLocationRequest {
+  string driver_id = 1;
+  double lat = 2;
+  double lng = 3;
+}
+
+message CompleteDeliveryRequest {
+  string assignment_id = 1;
+}
+
+message DeliveryLocationPoint {
+  string assignment_id = 1;
+  string driver_id = 2;
+  double lat = 3;
+  double lng = 4;
+  google.protobuf.Timestamp recorded_at = 5;
+}
+
+message GetTrackingHistoryRequest {
+  string assignment_id = 1;
+}
+
+message GetTrackingHistoryResponse {
+  repeated DeliveryLocationPoint points = 1;
+}
+
+message ListDriverLocationsRequest {}
+
+message DriverLocation {
+  string driver_id = 1;
+  double lat = 2;
+  double lng = 3;
+  google.protobuf.Timestamp updated_at = 4;
+}
+
+message ListDriverLocationsResponse {
+  repeated DriverLocation locations = 1;
+}

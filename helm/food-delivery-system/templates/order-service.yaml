@@ -1,0 +1,50 @@
+{{- $service := index .Values.services "order-service" }}
+{{- if $service.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: order-service
+  namespace: {{ include "food-delivery-system.namespace" . }}
+  labels:
+    app: order-service
+    {{- include "food-delivery-system.labels" . | nindent 4 }}
+spec:
+  replicas: {{ $service.replicas }}
+  selector:
+    matchLabels:
+      app: order-service
+  template:
+    metadata:
+      labels:
+        app: order-service
+        {{- include "food-delivery-system.labels" . | nindent 8 }}
+    spec:
+      containers:
+        - name: order-service
+          image: {{ include "food-delivery-system.image" (dict "image" $service.image "tag" $service.tag "global" .Values.global) }}
+          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+          ports:
+            - containerPort: {{ $service.port }}
+          envFrom:
+            - configMapRef:
+                name: food-delivery-config
+            - secretRef:
+                name: food-delivery-secrets
+          resources:
+            {{- toYaml $service.resources | nindent 12 }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: order-service
+  namespace: {{ include "food-delivery-system.namespace" . }}
+  labels:
+    app: order-service
+    {{- include "food-delivery-system.labels" . | nindent 4 }}
+spec:
+  selector:
+    app: order-service
+  ports:
+    - port: {{ $service.port }}
+      targetPort: {{ $service.port }}
+{{- end }}

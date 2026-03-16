@@ -1,0 +1,180 @@
+syntax = "proto3";
+
+package restaurant;
+
+option go_package = "github.com/mendmzury/food-delivery/proto/restaurant";
+
+import "google/protobuf/timestamp.proto";
+import "proto/common/common.proto";
+
+service RestaurantService {
+  rpc CreateRestaurant(CreateRestaurantRequest) returns (Restaurant);
+  rpc GetRestaurant(GetRestaurantRequest) returns (Restaurant);
+  rpc ListRestaurants(ListRestaurantsRequest) returns (ListRestaurantsResponse);
+  rpc UpdateRestaurant(UpdateRestaurantRequest) returns (Restaurant);
+  rpc DeleteRestaurant(DeleteRestaurantRequest) returns (common.SuccessResponse);
+  rpc CreateCategory(CreateCategoryRequest) returns (Category);
+  rpc GetCategory(GetCategoryRequest) returns (Category);
+  rpc ListCategories(ListCategoriesRequest) returns (ListCategoriesResponse);
+  rpc UpdateCategory(UpdateCategoryRequest) returns (Category);
+  rpc DeleteCategory(DeleteCategoryRequest) returns (common.SuccessResponse);
+  rpc CreateMenuItem(CreateMenuItemRequest) returns (MenuItem);
+  rpc GetMenuItem(GetMenuItemRequest) returns (MenuItem);
+  rpc ListMenuItems(ListMenuItemsRequest) returns (ListMenuItemsResponse);
+  rpc UpdateMenuItem(UpdateMenuItemRequest) returns (MenuItem);
+  rpc DeleteMenuItem(DeleteMenuItemRequest) returns (common.SuccessResponse);
+}
+
+message Restaurant {
+  string id = 1;
+  string name = 2;
+  string description = 3;
+  string logo = 4;
+  string cover_image = 5;
+  string address = 6;
+  double lat = 7;
+  double lng = 8;
+  string opening_hours = 9;
+  string status = 10;  // active, inactive
+  string owner_id = 11;
+  string owner_name = 12;
+  google.protobuf.Timestamp created_at = 13;
+  google.protobuf.Timestamp updated_at = 14;
+}
+
+message Category {
+  string id = 1;
+  string name = 2;
+  string restaurant_id = 3;
+  int32 sort_order = 4;
+  google.protobuf.Timestamp created_at = 5;
+  google.protobuf.Timestamp updated_at = 6;
+}
+
+message MenuItem {
+  string id = 1;
+  string name = 2;
+  string description = 3;
+  double price = 4;
+  string image = 5;
+  string category_id = 6;
+  bool available = 7;
+  string options = 8;  // JSON for add-ons
+  int32 sort_order = 9;
+  google.protobuf.Timestamp created_at = 10;
+  google.protobuf.Timestamp updated_at = 11;
+}
+
+message CreateRestaurantRequest {
+  string name = 1;
+  string description = 2;
+  string logo = 3;
+  string cover_image = 4;
+  string address = 5;
+  double lat = 6;
+  double lng = 7;
+  string opening_hours = 8;
+  string owner_id = 9;
+}
+
+message GetRestaurantRequest {
+  string id = 1;
+}
+
+message ListRestaurantsRequest {
+  common.PaginationRequest pagination = 1;
+  string search = 2;
+  string status = 3;
+  double lat = 4;
+  double lng = 5;
+}
+
+message ListRestaurantsResponse {
+  repeated Restaurant restaurants = 1;
+  common.PaginationMeta pagination = 2;
+}
+
+message UpdateRestaurantRequest {
+  string id = 1;
+  optional string name = 2;
+  optional string description = 3;
+  optional string logo = 4;
+  optional string cover_image = 5;
+  optional string address = 6;
+  optional double lat = 7;
+  optional double lng = 8;
+  optional string opening_hours = 9;
+  optional string status = 10;
+}
+
+message DeleteRestaurantRequest {
+  string id = 1;
+}
+
+message CreateCategoryRequest {
+  string name = 1;
+  string restaurant_id = 2;
+  int32 sort_order = 3;
+}
+
+message GetCategoryRequest {
+  string id = 1;
+}
+
+message ListCategoriesRequest {
+  string restaurant_id = 1;
+}
+
+message ListCategoriesResponse {
+  repeated Category categories = 1;
+}
+
+message UpdateCategoryRequest {
+  string id = 1;
+  optional string name = 2;
+  optional int32 sort_order = 3;
+}
+
+message DeleteCategoryRequest {
+  string id = 1;
+}
+
+message CreateMenuItemRequest {
+  string name = 1;
+  string description = 2;
+  double price = 3;
+  string image = 4;
+  string category_id = 5;
+  bool available = 6;
+  string options = 7;
+  int32 sort_order = 8;
+}
+
+message GetMenuItemRequest {
+  string id = 1;
+}
+
+message ListMenuItemsRequest {
+  string category_id = 1;
+  string restaurant_id = 2;
+  bool available_only = 3;
+}
+
+message ListMenuItemsResponse {
+  repeated MenuItem menu_items = 1;
+}
+
+message UpdateMenuItemRequest {
+  string id = 1;
+  optional string name = 2;
+  optional string description = 3;
+  optional double price = 4;
+  optional string image = 5;
+  optional bool available = 6;
+  optional string options = 7;
+  optional int32 sort_order = 8;
+}
+
+message DeleteMenuItemRequest {
+  string id = 1;
+}

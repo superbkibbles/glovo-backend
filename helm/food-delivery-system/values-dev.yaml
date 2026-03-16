@@ -1,0 +1,7 @@
+# Development overrides
+global:
+  namespace: food-delivery-system-helm
+  imagePullPolicy: IfNotPresent
+
+config:
+  env: "development"

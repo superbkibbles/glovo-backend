@@ -1,0 +1,57 @@
+{{- if .Values.mongodb.enabled }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mongodb
+  namespace: {{ include "food-delivery-system.namespace" . }}
+  labels:
+    app: mongodb
+    {{- include "food-delivery-system.labels" . | nindent 4 }}
+spec:
+  serviceName: mongodb
+  replicas: {{ .Values.mongodb.replicas }}
+  selector:
+    matchLabels:
+      app: mongodb
+  template:
+    metadata:
+      labels:
+        app: mongodb
+        {{- include "food-delivery-system.labels" . | nindent 8 }}
+    spec:
+      containers:
+        - name: mongodb
+          image: {{ printf "%s:%s" .Values.mongodb.image.repository .Values.mongodb.image.tag }}
+          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+          ports:
+            - containerPort: 27017
+          volumeMounts:
+            - name: mongodb-data
+              mountPath: /data/db
+          resources:
+            {{- toYaml .Values.mongodb.resources | nindent 12 }}
+  volumeClaimTemplates:
+    - metadata:
+        name: mongodb-data
+      spec:
+        accessModes: ["{{ .Values.mongodb.storage.accessMode }}"]
+        resources:
+          requests:
+            storage: {{ .Values.mongodb.storage.size }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongodb
+  namespace: {{ include "food-delivery-system.namespace" . }}
+  labels:
+    app: mongodb
+    {{- include "food-delivery-system.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.mongodb.service.type | default "ClusterIP" }}
+  selector:
+    app: mongodb
+  ports:
+    - port: 27017
+      targetPort: 27017
+{{- end }}

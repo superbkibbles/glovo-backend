@@ -1,0 +1,158 @@
+syntax = "proto3";
+
+package user;
+
+option go_package = "github.com/mendmzury/food-delivery/proto/user";
+
+import "google/protobuf/timestamp.proto";
+import "proto/common/common.proto";
+
+service UserService {
+  rpc CreateUser(CreateUserRequest) returns (User);
+  rpc GetUser(GetUserRequest) returns (User);
+  rpc GetUserByUsername(GetUserByUsernameRequest) returns (User);
+  rpc ListUsers(ListUsersRequest) returns (ListUsersResponse);
+  rpc UpdateUser(UpdateUserRequest) returns (User);
+  rpc DeleteUser(DeleteUserRequest) returns (common.SuccessResponse);
+}
+
+service RoleService {
+  rpc CreateRole(CreateRoleRequest) returns (Role);
+  rpc GetRole(GetRoleRequest) returns (Role);
+  rpc ListRoles(ListRolesRequest) returns (ListRolesResponse);
+  rpc UpdateRole(UpdateRoleRequest) returns (Role);
+  rpc DeleteRole(DeleteRoleRequest) returns (common.SuccessResponse);
+}
+
+service PermissionService {
+  rpc ListPermissions(ListPermissionsRequest) returns (ListPermissionsResponse);
+}
+
+enum UserType {
+  USER_TYPE_UNSPECIFIED = 0;
+  USER_TYPE_CUSTOMER = 1;
+  USER_TYPE_RESTAURANT_OWNER = 2;
+  USER_TYPE_DRIVER = 3;
+  USER_TYPE_ADMIN = 4;
+}
+
+message User {
+  string id = 1;
+  string username = 2;
+  string name = 3;
+  string phone_number = 4;
+  string profile_photo = 5;
+  string role_id = 6;
+  string role_name = 7;
+  bool is_superadmin = 8;
+  bool active = 9;
+  UserType user_type = 10;
+  oneof profile {
+    CustomerProfile customer_profile = 11;
+    DriverProfile driver_profile = 12;
+    RestaurantOwnerProfile restaurant_owner_profile = 13;
+  }
+  google.protobuf.Timestamp created_at = 14;
+  google.protobuf.Timestamp updated_at = 15;
+}
+
+message CustomerProfile {
+  string default_address = 1;
+  double default_lat = 2;
+  double default_lng = 3;
+}
+
+message DriverProfile {
+  string vehicle_type = 1;
+  string vehicle_plate = 2;
+  bool available = 3;
+  double current_lat = 4;
+  double current_lng = 5;
+}
+
+message RestaurantOwnerProfile {
+  repeated string restaurant_ids = 1;
+}
+
+message Role {
+  string id = 1;
+  string name = 2;
+  string icon = 3;
+  repeated string permissions = 4;
+  google.protobuf.Timestamp created_at = 5;
+  google.protobuf.Timestamp updated_at = 6;
+}
+
+message CreateUserRequest {
+  string username = 1;
+  string password = 2;
+  string name = 3;
+  string phone_number = 4;
+  string role_id = 5;
+  UserType user_type = 6;
+}
+
+message GetUserRequest {
+  string id = 1;
+}
+
+message GetUserByUsernameRequest {
+  string username = 1;
+}
+
+message ListUsersRequest {
+  common.PaginationRequest pagination = 1;
+  string search = 2;
+  UserType user_type = 3;
+}
+
+message ListUsersResponse {
+  repeated User users = 1;
+  common.PaginationMeta pagination = 2;
+}
+
+message UpdateUserRequest {
+  string id = 1;
+  optional string name = 2;
+  optional string phone_number = 3;
+  optional string profile_photo = 4;
+  optional string role_id = 5;
+  optional bool active = 6;
+}
+
+message DeleteUserRequest {
+  string id = 1;
+}
+
+message CreateRoleRequest {
+  string name = 1;
+  string icon = 2;
+  repeated string permissions = 3;
+}
+
+message GetRoleRequest {
+  string id = 1;
+}
+
+message ListRolesRequest {}
+
+message ListRolesResponse {
+  repeated Role roles = 1;
+}
+
+message UpdateRoleRequest {
+  string id = 1;
+  optional string name = 2;
+  optional string icon = 3;
+  repeated string permissions = 4;
+}
+
+message DeleteRoleRequest {
+  string id = 1;
+}
+
+message ListPermissionsRequest {}
+
+message ListPermissionsResponse {
+  repeated string permissions = 1;
+}

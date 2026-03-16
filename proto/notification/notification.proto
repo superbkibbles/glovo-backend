@@ -1,0 +1,96 @@
+syntax = "proto3";
+
+package notification;
+
+option go_package = "github.com/mendmzury/food-delivery/proto/notification";
+
+import "google/protobuf/timestamp.proto";
+import "proto/common/common.proto";
+
+service NotificationService {
+  rpc SendNotification(SendNotificationRequest) returns (Notification);
+  rpc GetNotification(GetNotificationRequest) returns (Notification);
+  rpc ListNotifications(ListNotificationsRequest) returns (ListNotificationsResponse);
+  rpc MarkAsRead(MarkAsReadRequest) returns (Notification);
+  rpc MarkAllAsRead(MarkAllAsReadRequest) returns (common.SuccessResponse);
+  rpc DeleteNotification(DeleteNotificationRequest) returns (common.SuccessResponse);
+  rpc GetUnreadCount(GetUnreadCountRequest) returns (GetUnreadCountResponse);
+  rpc RegisterDeviceToken(RegisterDeviceTokenRequest) returns (common.SuccessResponse);
+  rpc UnregisterDeviceToken(UnregisterDeviceTokenRequest) returns (common.SuccessResponse);
+}
+
+message Notification {
+  string id = 1;
+  string user_id = 2;
+  NotificationType type = 3;
+  string title = 4;
+  string message = 5;
+  string data = 6;
+  bool read = 7;
+  google.protobuf.Timestamp read_at = 8;
+  google.protobuf.Timestamp created_at = 9;
+}
+
+enum NotificationType {
+  NOTIFICATION_TYPE_UNSPECIFIED = 0;
+  NOTIFICATION_TYPE_INFO = 1;
+  NOTIFICATION_TYPE_WARNING = 2;
+  NOTIFICATION_TYPE_ERROR = 3;
+  NOTIFICATION_TYPE_SUCCESS = 4;
+  NOTIFICATION_TYPE_ORDER_PLACED = 5;
+  NOTIFICATION_TYPE_ORDER_ACCEPTED = 6;
+  NOTIFICATION_TYPE_ORDER_READY = 7;
+  NOTIFICATION_TYPE_DRIVER_ASSIGNED = 8;
+  NOTIFICATION_TYPE_DRIVER_ARRIVED = 9;
+  NOTIFICATION_TYPE_ORDER_DELIVERED = 10;
+  NOTIFICATION_TYPE_ORDER_CANCELLED = 11;
+  NOTIFICATION_TYPE_GENERAL = 12;
+}
+
+message SendNotificationRequest {
+  string user_id = 1;
+  NotificationType type = 2;
+  string title = 3;
+  string message = 4;
+  string data = 5;
+}
+
+message GetNotificationRequest {
+  string id = 1;
+}
+
+message ListNotificationsRequest {
+  common.PaginationRequest pagination = 1;
+  bool unread_only = 2;
+  NotificationType type = 3;
+}
+
+message ListNotificationsResponse {
+  repeated Notification notifications = 1;
+  common.PaginationMeta pagination = 2;
+}
+
+message MarkAsReadRequest {
+  string id = 1;
+}
+
+message MarkAllAsReadRequest {}
+
+message DeleteNotificationRequest {
+  string id = 1;
+}
+
+message GetUnreadCountRequest {}
+
+message GetUnreadCountResponse {
+  int32 count = 1;
+}
+
+message RegisterDeviceTokenRequest {
+  string token = 1;
+  string platform = 2;
+}
+
+message UnregisterDeviceTokenRequest {
+  string token = 1;
+}

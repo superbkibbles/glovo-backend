@@ -1,0 +1,62 @@
+syntax = "proto3";
+
+package settings;
+
+option go_package = "github.com/mendmzury/food-delivery/proto/settings";
+
+import "google/protobuf/timestamp.proto";
+
+service SettingsService {
+  rpc GetCommission(GetCommissionRequest) returns (GetCommissionResponse);
+  rpc UpdateCommission(UpdateCommissionRequest) returns (GetCommissionResponse);
+  rpc ListOperatingAreas(ListOperatingAreasRequest) returns (ListOperatingAreasResponse);
+  rpc CreateOperatingArea(CreateOperatingAreaRequest) returns (OperatingArea);
+  rpc UpdateOperatingArea(UpdateOperatingAreaRequest) returns (OperatingArea);
+  rpc DeleteOperatingArea(DeleteOperatingAreaRequest) returns (OperatingArea);
+}
+
+message GetCommissionRequest {}
+
+message GetCommissionResponse {
+  double commission_percent = 1;
+}
+
+message UpdateCommissionRequest {
+  double commission_percent = 1;
+}
+
+message OperatingArea {
+  string id = 1;
+  string name = 2;
+  repeated Coordinate coordinates = 3;
+  bool active = 4;
+  google.protobuf.Timestamp created_at = 5;
+  google.protobuf.Timestamp updated_at = 6;
+}
+
+message Coordinate {
+  double lng = 1;
+  double lat = 2;
+}
+
+message ListOperatingAreasRequest {}
+
+message ListOperatingAreasResponse {
+  repeated OperatingArea areas = 1;
+}
+
+message CreateOperatingAreaRequest {
+  string name = 1;
+  repeated Coordinate coordinates = 2;
+}
+
+message UpdateOperatingAreaRequest {
+  string id = 1;
+  string name = 2;
+  repeated Coordinate coordinates = 3;
+  bool active = 4;
+}
+
+message DeleteOperatingAreaRequest {
+  string id = 1;
+}
