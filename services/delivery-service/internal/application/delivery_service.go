@@ -10,6 +10,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/mendmzury/food-delivery/pkg/config"
 	"github.com/mendmzury/food-delivery/pkg/database"
+	"github.com/mendmzury/food-delivery/pkg/logger"
 	"github.com/mendmzury/food-delivery/services/delivery-service/internal/domain"
 	"github.com/mendmzury/food-delivery/services/delivery-service/internal/repository"
 	deliverypb "github.com/mendmzury/food-delivery/proto/delivery"
@@ -18,6 +19,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
@@ -85,7 +87,9 @@ func (s *DeliveryService) AssignDriver(ctx context.Context, req *deliverypb.Assi
 	}
 	defer closeFn()
 
-	_, err = orderClient.UpdateOrderStatus(ctx, &orderpb.UpdateOrderStatusRequest{
+	// Pass driver_id via metadata so the order service can set it on the order record
+	orderCtx := metadata.NewOutgoingContext(ctx, metadata.Pairs("driver-id", req.DriverId))
+	_, err = orderClient.UpdateOrderStatus(orderCtx, &orderpb.UpdateOrderStatusRequest{
 		Id:     req.OrderId,
 		Status: orderpb.OrderStatus_ORDER_STATUS_ASSIGNED,
 	})
@@ -234,12 +238,18 @@ func (s *DeliveryService) CompleteDelivery(ctx context.Context, req *deliverypb.
 	}
 
 	orderClient, closeFn, err := s.getOrderClient()
-	if err == nil {
+	if err != nil {
+		logger.Error().Err(err).Str("order_id", a.OrderID.String()).
+			Msg("delivery-service: failed to connect to order service for DELIVERED status update")
+	} else {
 		defer closeFn()
-		orderClient.UpdateOrderStatus(ctx, &orderpb.UpdateOrderStatusRequest{
+		if _, updateErr := orderClient.UpdateOrderStatus(ctx, &orderpb.UpdateOrderStatusRequest{
 			Id:     a.OrderID.String(),
 			Status: orderpb.OrderStatus_ORDER_STATUS_DELIVERED,
-		})
+		}); updateErr != nil {
+			logger.Error().Err(updateErr).Str("order_id", a.OrderID.String()).
+				Msg("delivery-service: failed to update order status to DELIVERED")
+		}
 	}
 
 	lat, lng := s.getDriverLocation(ctx, a.DriverID.String())

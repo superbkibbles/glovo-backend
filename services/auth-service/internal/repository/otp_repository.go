@@ -121,7 +121,10 @@ func (r *OTPRepository) SendEmailOTP(ctx context.Context, email, code string) er
 	return nil
 }
 
-func GenerateOTPCode() string {
-	n, _ := rand.Int(rand.Reader, big.NewInt(1000000))
-	return fmt.Sprintf("%06d", n.Int64())
+func GenerateOTPCode() (string, error) {
+	n, err := rand.Int(rand.Reader, big.NewInt(1000000))
+	if err != nil {
+		return "", fmt.Errorf("failed to generate OTP code: %w", err)
+	}
+	return fmt.Sprintf("%06d", n.Int64()), nil
 }

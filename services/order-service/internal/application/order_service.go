@@ -14,6 +14,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
@@ -86,17 +87,20 @@ func (s *OrderService) CreateOrder(ctx context.Context, req *orderpb.CreateOrder
 	menuItemPrices := make(map[string]float64)
 
 	restClient, closeFn, err := s.getRestaurantClient()
-	if err == nil {
-		defer closeFn()
-		if r, err := restClient.GetRestaurant(ctx, &restaurantpb.GetRestaurantRequest{Id: req.RestaurantId}); err == nil {
-			restaurantName = r.Name
+	if err != nil {
+		return nil, status.Error(codes.Internal, "failed to connect to restaurant service")
+	}
+	defer closeFn()
+	if r, err := restClient.GetRestaurant(ctx, &restaurantpb.GetRestaurantRequest{Id: req.RestaurantId}); err == nil {
+		restaurantName = r.Name
+	}
+	for _, item := range req.Items {
+		m, err := restClient.GetMenuItem(ctx, &restaurantpb.GetMenuItemRequest{Id: item.MenuItemId})
+		if err != nil {
+			return nil, status.Error(codes.NotFound, "menu item not found: "+item.MenuItemId)
 		}
-		for _, item := range req.Items {
-			if m, err := restClient.GetMenuItem(ctx, &restaurantpb.GetMenuItemRequest{Id: item.MenuItemId}); err == nil {
-				menuItemNames[item.MenuItemId] = m.Name
-				menuItemPrices[item.MenuItemId] = m.Price
-			}
-		}
+		menuItemNames[item.MenuItemId] = m.Name
+		menuItemPrices[item.MenuItemId] = m.Price
 	}
 
 	var subtotal float64
@@ -107,6 +111,9 @@ func (s *OrderService) CreateOrder(ctx context.Context, req *orderpb.CreateOrder
 			return nil, status.Error(codes.InvalidArgument, "invalid menu_item_id")
 		}
 		unitPrice := menuItemPrices[it.MenuItemId]
+		if unitPrice <= 0 {
+			return nil, status.Error(codes.InvalidArgument, "invalid price for menu item: "+it.MenuItemId)
+		}
 		subtotal += unitPrice * float64(it.Quantity)
 		items[i] = &domain.OrderItem{
 			MenuItemID:   menuItemID,
@@ -134,7 +141,13 @@ func (s *OrderService) CreateOrder(ctx context.Context, req *orderpb.CreateOrder
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	order, orderItems, _ := s.orderRepo.GetByID(ctx, order.ID)
+	order, orderItems, err := s.orderRepo.GetByID(ctx, order.ID)
+	if err != nil {
+		return nil, status.Error(codes.Internal, "failed to retrieve created order: "+err.Error())
+	}
+	if order == nil {
+		return nil, status.Error(codes.Internal, "failed to retrieve created order")
+	}
 	return orderToProto(order, orderItems, ""), nil
 }
 
@@ -234,6 +247,14 @@ func (s *OrderService) UpdateOrderStatus(ctx context.Context, req *orderpb.Updat
 		order.Status = st
 	} else {
 		return nil, status.Error(codes.InvalidArgument, "invalid status")
+	}
+	// Accept driver_id via gRPC metadata (set by delivery-service on assignment)
+	if md, ok := metadata.FromIncomingContext(ctx); ok {
+		if driverIDs := md.Get("driver-id"); len(driverIDs) > 0 {
+			if driverID, parseErr := uuid.Parse(driverIDs[0]); parseErr == nil {
+				order.DriverID = driverID
+			}
+		}
 	}
 	if err := s.orderRepo.Update(ctx, order); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())

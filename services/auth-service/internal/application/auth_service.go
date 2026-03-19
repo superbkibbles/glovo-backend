@@ -456,7 +456,10 @@ func (s *AuthService) SendOTP(ctx context.Context, phone, email string) error {
 		return fmt.Errorf("provide either phone_number or email, not both")
 	}
 
-	code := repository.GenerateOTPCode()
+	code, err := repository.GenerateOTPCode()
+	if err != nil {
+		return fmt.Errorf("failed to generate OTP: %w", err)
+	}
 
 	if phone != "" {
 		if err := s.otpRepo.StorePhoneOTP(ctx, phone, code); err != nil {

@@ -22,14 +22,16 @@ func ListAssignments(cfg *config.Config, clients *grpc.Clients) gin.HandlerFunc 
 		driverID := c.Query("driver_id")
 		statusStr := c.Query("status")
 
-		status := deliverypb.AssignmentStatus_ASSIGNMENT_STATUS_ASSIGNED
+		var status deliverypb.AssignmentStatus
 		switch statusStr {
+		case "assigned":
+			status = deliverypb.AssignmentStatus_ASSIGNMENT_STATUS_ASSIGNED
 		case "picked_up":
 			status = deliverypb.AssignmentStatus_ASSIGNMENT_STATUS_PICKED_UP
 		case "delivered":
 			status = deliverypb.AssignmentStatus_ASSIGNMENT_STATUS_DELIVERED
 		default:
-			status = 0
+			status = 0 // 0 means no filter — list all statuses
 		}
 
 		ctx := getAuthContext(c)

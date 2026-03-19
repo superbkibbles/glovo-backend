@@ -56,9 +56,13 @@ func (h *Hub) SendToUser(userID string, message []byte) bool {
 	case client.send <- message:
 		return true
 	default:
+		// Buffer full — evict the client. Guard with write lock to prevent
+		// double-close if two goroutines both reach this default branch.
 		h.mu.Lock()
-		delete(h.clients, userID)
-		close(client.send)
+		if _, stillPresent := h.clients[userID]; stillPresent {
+			delete(h.clients, userID)
+			close(client.send)
+		}
 		h.mu.Unlock()
 		client.conn.Close()
 		return false

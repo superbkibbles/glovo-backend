@@ -135,8 +135,16 @@ func ensureSuperadmin(db *gorm.DB, cfg *config.Config) {
 		return
 	}
 	pwHasher := utils.NewPasswordHasher(cfg.PasswordPepper)
-	salt, _ := pwHasher.GenerateSalt()
-	hash, _ := pwHasher.HashPassword(cfg.SuperadminPassword, salt)
+	salt, err := pwHasher.GenerateSalt()
+	if err != nil {
+		logger.Error().Err(err).Msg("Failed to generate salt for superadmin")
+		return
+	}
+	hash, err := pwHasher.HashPassword(cfg.SuperadminPassword, salt)
+	if err != nil {
+		logger.Error().Err(err).Msg("Failed to hash password for superadmin")
+		return
+	}
 	superadmin := &domain.User{
 		ID:           uuid.New(),
 		Username:     cfg.SuperadminUsername,

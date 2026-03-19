@@ -97,6 +97,26 @@ func getAuthContext(c *gin.Context) context.Context {
 	return c.Request.Context()
 }
 
+// requirePermission checks if the authenticated user has the given permission.
+// Returns true and aborts with 403 if the permission is missing.
+func requirePermission(c *gin.Context, permission string) bool {
+	isSuperadmin, _ := c.Get("is_superadmin")
+	if v, ok := isSuperadmin.(bool); ok && v {
+		return false
+	}
+	permissions, _ := c.Get("permissions")
+	if perms, ok := permissions.([]string); ok {
+		for _, p := range perms {
+			if p == permission {
+				return false
+			}
+		}
+	}
+	errorResponse(c, http.StatusForbidden, "missing required permission: "+permission)
+	c.Abort()
+	return true
+}
+
 func getPaginationParams(c *gin.Context) (int64, int64) {
 	page, _ := strconv.ParseInt(c.DefaultQuery("page", "1"), 10, 64)
 	pageSize, _ := strconv.ParseInt(c.DefaultQuery("page_size", "10"), 10, 64)

@@ -20,6 +20,9 @@ import (
 // @Router /users [get]
 func ListUsers(cfg *config.Config, clients *grpc.Clients) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		if requirePermission(c, "users.view") {
+			return
+		}
 		page, pageSize := getPaginationParams(c)
 		search := c.Query("search")
 		userTypeStr := c.Query("user_type")
@@ -68,6 +71,9 @@ func GetUser(cfg *config.Config, clients *grpc.Clients) gin.HandlerFunc {
 
 func CreateUser(cfg *config.Config, clients *grpc.Clients) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		if requirePermission(c, "users.create") {
+			return
+		}
 		var req struct {
 			Username    string `json:"username" binding:"required"`
 			Password    string `json:"password" binding:"required"`
@@ -108,6 +114,9 @@ func CreateUser(cfg *config.Config, clients *grpc.Clients) gin.HandlerFunc {
 
 func UpdateUser(cfg *config.Config, clients *grpc.Clients) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		if requirePermission(c, "users.edit") {
+			return
+		}
 		id := c.Param("id")
 		var req struct {
 			Name         *string `json:"name"`
@@ -148,6 +157,9 @@ func UpdateUser(cfg *config.Config, clients *grpc.Clients) gin.HandlerFunc {
 
 func DeleteUser(cfg *config.Config, clients *grpc.Clients) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		if requirePermission(c, "users.delete") {
+			return
+		}
 		id := c.Param("id")
 		ctx := getAuthContext(c)
 		_, err := clients.User.DeleteUser(ctx, &userpb.DeleteUserRequest{Id: id})

@@ -65,6 +65,9 @@ func GetRestaurant(cfg *config.Config, clients *grpc.Clients) gin.HandlerFunc {
 // @Router /restaurants [post]
 func CreateRestaurant(cfg *config.Config, clients *grpc.Clients) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		if requirePermission(c, "restaurants.create") {
+			return
+		}
 		var req struct {
 			Name         string  `json:"name" binding:"required"`
 			Description  string  `json:"description"`
@@ -109,6 +112,9 @@ func CreateRestaurant(cfg *config.Config, clients *grpc.Clients) gin.HandlerFunc
 // @Router /restaurants/{id} [put]
 func UpdateRestaurant(cfg *config.Config, clients *grpc.Clients) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		if requirePermission(c, "restaurants.edit") {
+			return
+		}
 		id := c.Param("id")
 		var req struct {
 			Name         *string  `json:"name"`
@@ -172,6 +178,9 @@ func UpdateRestaurant(cfg *config.Config, clients *grpc.Clients) gin.HandlerFunc
 // @Router /restaurants/{id} [delete]
 func DeleteRestaurant(cfg *config.Config, clients *grpc.Clients) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		if requirePermission(c, "restaurants.delete") {
+			return
+		}
 		id := c.Param("id")
 		ctx := getAuthContext(c)
 		_, err := clients.Restaurant.DeleteRestaurant(ctx, &restaurantpb.DeleteRestaurantRequest{Id: id})
