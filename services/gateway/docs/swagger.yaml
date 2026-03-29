@@ -430,6 +430,24 @@ paths:
       summary: Get order
       tags:
       - orders
+  /orders/{id}/accept:
+    post:
+      parameters:
+      - description: Order ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Driver accepts assigned order (moves to on_the_way)
+      tags:
+      - orders
   /orders/{id}/cancel:
     post:
       parameters:
@@ -594,36 +612,6 @@ paths:
       summary: Create menu item
       tags:
       - restaurants
-  /roles:
-    get:
-      responses:
-        "200":
-          description: OK
-          schema:
-            type: object
-      security:
-      - BearerAuth: []
-      summary: List roles
-      tags:
-      - roles
-  /roles/{id}:
-    get:
-      parameters:
-      - description: Role ID
-        in: path
-        name: id
-        required: true
-        type: string
-      responses:
-        "200":
-          description: OK
-          schema:
-            type: object
-      security:
-      - BearerAuth: []
-      summary: Get role
-      tags:
-      - roles
   /settings/commission:
     get:
       responses:
@@ -724,73 +712,6 @@ paths:
       security:
       - BearerAuth: []
       summary: List users
-      tags:
-      - users
-    post:
-      consumes:
-      - application/json
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Created
-          schema:
-            type: object
-      security:
-      - BearerAuth: []
-      summary: Create user
-      tags:
-      - users
-  /users/{id}:
-    delete:
-      parameters:
-      - description: User ID
-        in: path
-        name: id
-        required: true
-        type: string
-      responses:
-        "200":
-          description: OK
-          schema:
-            type: object
-      security:
-      - BearerAuth: []
-      summary: Delete user
-      tags:
-      - users
-    get:
-      parameters:
-      - description: User ID
-        in: path
-        name: id
-        required: true
-        type: string
-      responses:
-        "200":
-          description: OK
-          schema:
-            type: object
-      security:
-      - BearerAuth: []
-      summary: Get user
-      tags:
-      - users
-    put:
-      parameters:
-      - description: User ID
-        in: path
-        name: id
-        required: true
-        type: string
-      responses:
-        "200":
-          description: OK
-          schema:
-            type: object
-      security:
-      - BearerAuth: []
-      summary: Update user
       tags:
       - users
   /websocket/connections:

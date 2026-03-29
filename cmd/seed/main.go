@@ -207,6 +207,23 @@ func seedAuth(db *gorm.DB, cfg *config.Config, log *zerolog.Logger) {
 		}
 	}
 
+	var driverRole seedRole
+	if err := db.WithContext(ctx).Where("name = ?", "Driver").First(&driverRole).Error; err != nil {
+		driverRole = seedRole{
+			ID:          uuid.New(),
+			Name:        "Driver",
+			Icon:        "truck",
+			Permissions: seedStringArray(middleware.DriverPermissions()),
+			CreatedAt:   time.Now(),
+			UpdatedAt:   time.Now(),
+		}
+		if err := db.Create(&driverRole).Error; err != nil {
+			log.Warn().Err(err).Msg("Failed to create Driver role")
+		} else {
+			log.Info().Str("role_id", driverRole.ID.String()).Msg("Created Driver role")
+		}
+	}
+
 	var user seedUser
 	if err := db.Where("is_superadmin = ?", true).First(&user).Error; err == nil {
 		log.Info().Msg("Superadmin already exists, skipping")

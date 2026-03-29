@@ -72,6 +72,15 @@ func CustomerPermissions() []string {
 	}
 }
 
+// DriverPermissions returns permissions for delivery driver role (mobile app)
+func DriverPermissions() []string {
+	return []string{
+		PermOrdersView, PermOrdersEdit,
+		PermDeliveryView,
+		PermNotificationsView,
+	}
+}
+
 // PermissionChecker provides permission checking functionality
 type PermissionChecker struct{}
 

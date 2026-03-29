@@ -135,6 +135,7 @@ func main() {
 				orders.GET("", handlers.ListOrders(cfg, grpcClients))
 				orders.POST("", handlers.CreateOrder(cfg, grpcClients))
 				orders.GET("/:id", handlers.GetOrder(cfg, grpcClients))
+				orders.POST("/:id/accept", handlers.AcceptOrder(cfg, grpcClients))
 				orders.PUT("/:id/status", handlers.UpdateOrderStatus(cfg, grpcClients))
 				orders.POST("/:id/cancel", handlers.CancelOrder(cfg, grpcClients))
 			}

@@ -54,7 +54,7 @@ func (r *OrderRepository) GetByID(ctx context.Context, id uuid.UUID) (*domain.Or
 	return &order, items, nil
 }
 
-func (r *OrderRepository) List(ctx context.Context, customerID, restaurantID, driverID *uuid.UUID, status domain.OrderStatus, page, pageSize int64) ([]*domain.Order, int64, error) {
+func (r *OrderRepository) List(ctx context.Context, customerID, restaurantID, driverID *uuid.UUID, statuses []domain.OrderStatus, page, pageSize int64) ([]*domain.Order, int64, error) {
 	query := r.db.WithContext(ctx).Model(&domain.Order{})
 
 	if customerID != nil {
@@ -66,8 +66,8 @@ func (r *OrderRepository) List(ctx context.Context, customerID, restaurantID, dr
 	if driverID != nil {
 		query = query.Where("driver_id = ?", *driverID)
 	}
-	if status != "" {
-		query = query.Where("status = ?", status)
+	if len(statuses) > 0 {
+		query = query.Where("status IN ?", statuses)
 	}
 
 	var total int64

@@ -136,10 +136,11 @@ Base path: `/api/v1`
 
 | Method | Path | Description |
 |--------|------|-------------|
-| GET | `/orders` | List orders |
+| GET | `/orders` | List orders (`status` comma-separated, e.g. `assigned,ready,picked_up`; `role=driver` scopes to JWT user as driver) |
 | POST | `/orders` | Create order |
-| GET | `/orders/:id` | Get order |
-| PUT | `/orders/:id/status` | Update order status |
+| GET | `/orders/:id` | Get order (includes pickup/destination coordinates, `driver_id`) |
+| POST | `/orders/:id/accept` | Driver accepts assigned order → `on_the_way` |
+| PUT | `/orders/:id/status` | Update order status (`on_the_way`, `picked_up`, `delivered`, …) |
 | POST | `/orders/:id/cancel` | Cancel order |
 
 #### Delivery

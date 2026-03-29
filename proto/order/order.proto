@@ -13,6 +13,7 @@ service OrderService {
   rpc ListOrders(ListOrdersRequest) returns (ListOrdersResponse);
   rpc UpdateOrderStatus(UpdateOrderStatusRequest) returns (Order);
   rpc CancelOrder(CancelOrderRequest) returns (Order);
+  rpc AcceptOrder(AcceptOrderRequest) returns (Order);
 }
 
 enum OrderStatus {
@@ -24,6 +25,7 @@ enum OrderStatus {
   ORDER_STATUS_PICKED_UP = 5;
   ORDER_STATUS_DELIVERED = 6;
   ORDER_STATUS_CANCELLED = 7;
+  ORDER_STATUS_ON_THE_WAY = 8;
 }
 
 message Order {
@@ -43,6 +45,11 @@ message Order {
   repeated OrderItem items = 14;
   google.protobuf.Timestamp created_at = 15;
   google.protobuf.Timestamp updated_at = 16;
+  string pickup_address = 17;
+  double pickup_latitude = 18;
+  double pickup_longitude = 19;
+  double destination_latitude = 20;
+  double destination_longitude = 21;
 }
 
 message OrderItem {
@@ -80,6 +87,7 @@ message ListOrdersRequest {
   string restaurant_id = 3;
   string driver_id = 4;
   OrderStatus status = 5;
+  repeated OrderStatus statuses = 6;
 }
 
 message ListOrdersResponse {
@@ -93,5 +101,9 @@ message UpdateOrderStatusRequest {
 }
 
 message CancelOrderRequest {
+  string id = 1;
+}
+
+message AcceptOrderRequest {
   string id = 1;
 }

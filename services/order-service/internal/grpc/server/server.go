@@ -35,3 +35,7 @@ func (s *OrderServer) UpdateOrderStatus(ctx context.Context, req *orderpb.Update
 func (s *OrderServer) CancelOrder(ctx context.Context, req *orderpb.CancelOrderRequest) (*orderpb.Order, error) {
 	return s.service.CancelOrder(ctx, req)
 }
+
+func (s *OrderServer) AcceptOrder(ctx context.Context, req *orderpb.AcceptOrderRequest) (*orderpb.Order, error) {
+	return s.service.AcceptOrder(ctx, req)
+}

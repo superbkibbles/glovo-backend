@@ -106,3 +106,8 @@ func connect(addr string) (*grpc.ClientConn, error) {
 func WithAuth(ctx context.Context, token string) context.Context {
 	return metadata.AppendToOutgoingContext(ctx, "authorization", "Bearer "+token)
 }
+
+// WithDriverID sets the driver-id metadata header for order-service (accept, etc.).
+func WithDriverID(ctx context.Context, driverID string) context.Context {
+	return metadata.AppendToOutgoingContext(ctx, "driver-id", driverID)
+}

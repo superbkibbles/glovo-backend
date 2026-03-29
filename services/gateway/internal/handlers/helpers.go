@@ -79,6 +79,8 @@ func handleGRPCError(c *gin.Context, err error) {
 		errorResponse(c, http.StatusBadRequest, st.Message())
 	case codes.NotFound:
 		errorResponse(c, http.StatusNotFound, st.Message())
+	case codes.FailedPrecondition:
+		errorResponse(c, http.StatusBadRequest, st.Message())
 	case codes.AlreadyExists:
 		errorResponse(c, http.StatusConflict, st.Message())
 	case codes.Unavailable:

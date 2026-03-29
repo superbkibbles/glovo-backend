@@ -11,6 +11,7 @@ import (
 	commonpb "github.com/mendmzury/food-delivery/proto/common"
 	restaurantpb "github.com/mendmzury/food-delivery/proto/restaurant"
 	settingspb "github.com/mendmzury/food-delivery/proto/settings"
+	userpb "github.com/mendmzury/food-delivery/proto/user"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
@@ -25,17 +26,19 @@ var statusToProto = map[domain.OrderStatus]orderpb.OrderStatus{
 	domain.OrderStatusPreparing: orderpb.OrderStatus_ORDER_STATUS_PREPARING,
 	domain.OrderStatusReady:     orderpb.OrderStatus_ORDER_STATUS_READY,
 	domain.OrderStatusAssigned:  orderpb.OrderStatus_ORDER_STATUS_ASSIGNED,
+	domain.OrderStatusOnTheWay:  orderpb.OrderStatus_ORDER_STATUS_ON_THE_WAY,
 	domain.OrderStatusPickedUp:  orderpb.OrderStatus_ORDER_STATUS_PICKED_UP,
 	domain.OrderStatusDelivered: orderpb.OrderStatus_ORDER_STATUS_DELIVERED,
 	domain.OrderStatusCancelled: orderpb.OrderStatus_ORDER_STATUS_CANCELLED,
 }
 
 var protoToStatus = map[orderpb.OrderStatus]domain.OrderStatus{
-	orderpb.OrderStatus_ORDER_STATUS_PENDING:   domain.OrderStatusPending,
-	orderpb.OrderStatus_ORDER_STATUS_ACCEPTED:  domain.OrderStatusAccepted,
+	orderpb.OrderStatus_ORDER_STATUS_PENDING:    domain.OrderStatusPending,
+	orderpb.OrderStatus_ORDER_STATUS_ACCEPTED:   domain.OrderStatusAccepted,
 	orderpb.OrderStatus_ORDER_STATUS_PREPARING: domain.OrderStatusPreparing,
 	orderpb.OrderStatus_ORDER_STATUS_READY:     domain.OrderStatusReady,
 	orderpb.OrderStatus_ORDER_STATUS_ASSIGNED:  domain.OrderStatusAssigned,
+	orderpb.OrderStatus_ORDER_STATUS_ON_THE_WAY: domain.OrderStatusOnTheWay,
 	orderpb.OrderStatus_ORDER_STATUS_PICKED_UP: domain.OrderStatusPickedUp,
 	orderpb.OrderStatus_ORDER_STATUS_DELIVERED: domain.OrderStatusDelivered,
 	orderpb.OrderStatus_ORDER_STATUS_CANCELLED: domain.OrderStatusCancelled,
@@ -56,6 +59,14 @@ func (s *OrderService) getRestaurantClient() (restaurantpb.RestaurantServiceClie
 		return nil, nil, err
 	}
 	return restaurantpb.NewRestaurantServiceClient(conn), conn.Close, nil
+}
+
+func (s *OrderService) getUserClient() (userpb.UserServiceClient, func() error, error) {
+	conn, err := grpc.NewClient(s.cfg.UserServiceAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		return nil, nil, err
+	}
+	return userpb.NewUserServiceClient(conn), conn.Close, nil
 }
 
 func (s *OrderService) getCommissionPercent(ctx context.Context) float64 {
@@ -148,7 +159,7 @@ func (s *OrderService) CreateOrder(ctx context.Context, req *orderpb.CreateOrder
 	if order == nil {
 		return nil, status.Error(codes.Internal, "failed to retrieve created order")
 	}
-	return orderToProto(order, orderItems, ""), nil
+	return s.orderToProto(ctx, order, orderItems, ""), nil
 }
 
 func (s *OrderService) GetOrder(ctx context.Context, req *orderpb.GetOrderRequest) (*orderpb.Order, error) {
@@ -163,7 +174,7 @@ func (s *OrderService) GetOrder(ctx context.Context, req *orderpb.GetOrderReques
 	if order == nil {
 		return nil, status.Error(codes.NotFound, "order not found")
 	}
-	return orderToProto(order, items, ""), nil
+	return s.orderToProto(ctx, order, items, ""), nil
 }
 
 func (s *OrderService) ListOrders(ctx context.Context, req *orderpb.ListOrdersRequest) (*orderpb.ListOrdersResponse, error) {
@@ -200,12 +211,20 @@ func (s *OrderService) ListOrders(ctx context.Context, req *orderpb.ListOrdersRe
 		}
 	}
 
-	orderStatus := domain.OrderStatus("")
-	if req.Status != 0 {
-		orderStatus = protoToStatus[req.Status]
+	var statuses []domain.OrderStatus
+	if len(req.Statuses) > 0 {
+		for _, st := range req.Statuses {
+			if domainSt, ok := protoToStatus[st]; ok {
+				statuses = append(statuses, domainSt)
+			}
+		}
+	} else if req.Status != orderpb.OrderStatus_ORDER_STATUS_PENDING {
+		if st, ok := protoToStatus[req.Status]; ok {
+			statuses = append(statuses, st)
+		}
 	}
 
-	orders, total, err := s.orderRepo.List(ctx, customerID, restaurantID, driverID, orderStatus, page, pageSize)
+	orders, total, err := s.orderRepo.List(ctx, customerID, restaurantID, driverID, statuses, page, pageSize)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -213,7 +232,7 @@ func (s *OrderService) ListOrders(ctx context.Context, req *orderpb.ListOrdersRe
 	protoOrders := make([]*orderpb.Order, len(orders))
 	for i, o := range orders {
 		items, _ := s.orderRepo.GetItemsByOrderID(ctx, o.ID)
-		protoOrders[i] = orderToProto(o, items, "")
+		protoOrders[i] = s.orderToProto(ctx, o, items, "")
 	}
 
 	totalPages := int64(0)
@@ -259,7 +278,40 @@ func (s *OrderService) UpdateOrderStatus(ctx context.Context, req *orderpb.Updat
 	if err := s.orderRepo.Update(ctx, order); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
-	return orderToProto(order, items, ""), nil
+	return s.orderToProto(ctx, order, items, ""), nil
+}
+
+func (s *OrderService) AcceptOrder(ctx context.Context, req *orderpb.AcceptOrderRequest) (*orderpb.Order, error) {
+	id, err := uuid.Parse(req.Id)
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, "invalid id")
+	}
+	var callerDriver uuid.UUID
+	if md, ok := metadata.FromIncomingContext(ctx); ok {
+		if v := md.Get("driver-id"); len(v) > 0 {
+			if d, perr := uuid.Parse(v[0]); perr == nil {
+				callerDriver = d
+			}
+		}
+	}
+	if callerDriver == uuid.Nil {
+		return nil, status.Error(codes.Unauthenticated, "driver-id required")
+	}
+	order, items, err := s.orderRepo.GetByID(ctx, id)
+	if err != nil || order == nil {
+		return nil, status.Error(codes.NotFound, "order not found")
+	}
+	if order.Status != domain.OrderStatusAssigned {
+		return nil, status.Error(codes.FailedPrecondition, "order must be assigned to accept")
+	}
+	if order.DriverID == uuid.Nil || order.DriverID != callerDriver {
+		return nil, status.Error(codes.PermissionDenied, "not the assigned driver for this order")
+	}
+	order.Status = domain.OrderStatusOnTheWay
+	if err := s.orderRepo.Update(ctx, order); err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+	return s.orderToProto(ctx, order, items, ""), nil
 }
 
 func (s *OrderService) CancelOrder(ctx context.Context, req *orderpb.CancelOrderRequest) (*orderpb.Order, error) {
@@ -278,39 +330,86 @@ func (s *OrderService) CancelOrder(ctx context.Context, req *orderpb.CancelOrder
 	if err := s.orderRepo.Update(ctx, order); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
-	return orderToProto(order, items, ""), nil
+	return s.orderToProto(ctx, order, items, ""), nil
 }
 
-func orderToProto(o *domain.Order, items []*domain.OrderItem, driverName string) *orderpb.Order {
+func (s *OrderService) orderToProto(ctx context.Context, o *domain.Order, items []*domain.OrderItem, driverName string) *orderpb.Order {
 	if o == nil {
 		return nil
 	}
 	protoItems := make([]*orderpb.OrderItem, len(items))
 	for i, it := range items {
 		protoItems[i] = &orderpb.OrderItem{
-			Id:            it.ID.String(),
-			MenuItemId:    it.MenuItemID.String(),
-			MenuItemName:  it.MenuItemName,
-			Quantity:      it.Quantity,
-			UnitPrice:     it.UnitPrice,
-			Options:       it.Options,
+			Id:           it.ID.String(),
+			MenuItemId:   it.MenuItemID.String(),
+			MenuItemName: it.MenuItemName,
+			Quantity:     it.Quantity,
+			UnitPrice:    it.UnitPrice,
+			Options:      it.Options,
 		}
 	}
+
+	customerName := ""
+	userCl, closeUser, err := s.getUserClient()
+	if err == nil {
+		defer closeUser()
+		if u, err := userCl.GetUser(ctx, &userpb.GetUserRequest{Id: o.CustomerID.String()}); err == nil && u != nil {
+			customerName = u.Name
+		}
+		if driverName == "" && o.DriverID != uuid.Nil {
+			if d, err := userCl.GetUser(ctx, &userpb.GetUserRequest{Id: o.DriverID.String()}); err == nil && d != nil {
+				driverName = d.Name
+			}
+		}
+	}
+
+	pickupAddr := ""
+	var pickupLat, pickupLng float64
+	restaurantName := o.RestaurantName
+	restCl, closeRest, err := s.getRestaurantClient()
+	if err == nil {
+		defer closeRest()
+		if r, err := restCl.GetRestaurant(ctx, &restaurantpb.GetRestaurantRequest{Id: o.RestaurantID.String()}); err == nil && r != nil {
+			pickupAddr = r.Address
+			pickupLat = r.Lat
+			pickupLng = r.Lng
+			if restaurantName == "" {
+				restaurantName = r.Name
+			}
+		}
+	}
+
+	st, ok := statusToProto[o.Status]
+	if !ok {
+		st = orderpb.OrderStatus_ORDER_STATUS_PENDING
+	}
+
+	driverIDStr := ""
+	if o.DriverID != uuid.Nil {
+		driverIDStr = o.DriverID.String()
+	}
+
 	return &orderpb.Order{
-		Id:              o.ID.String(),
-		CustomerId:      o.CustomerID.String(),
-		RestaurantId:    o.RestaurantID.String(),
-		RestaurantName:  o.RestaurantName,
-		Status:          statusToProto[o.Status],
-		Total:           o.Total,
-		DeliveryAddress: o.DeliveryAddress,
-		DeliveryLat:     o.DeliveryLat,
-		DeliveryLng:     o.DeliveryLng,
-		Notes:           o.Notes,
-		DriverId:        o.DriverID.String(),
-		DriverName:      driverName,
-		Items:          protoItems,
-		CreatedAt:      timestamppb.New(o.CreatedAt),
-		UpdatedAt:      timestamppb.New(o.UpdatedAt),
+		Id:                    o.ID.String(),
+		CustomerId:            o.CustomerID.String(),
+		CustomerName:          customerName,
+		RestaurantId:          o.RestaurantID.String(),
+		RestaurantName:        restaurantName,
+		Status:                st,
+		Total:                 o.Total,
+		DeliveryAddress:       o.DeliveryAddress,
+		DeliveryLat:           o.DeliveryLat,
+		DeliveryLng:           o.DeliveryLng,
+		Notes:                 o.Notes,
+		DriverId:              driverIDStr,
+		DriverName:            driverName,
+		Items:                 protoItems,
+		CreatedAt:             timestamppb.New(o.CreatedAt),
+		UpdatedAt:             timestamppb.New(o.UpdatedAt),
+		PickupAddress:         pickupAddr,
+		PickupLatitude:        pickupLat,
+		PickupLongitude:       pickupLng,
+		DestinationLatitude:   o.DeliveryLat,
+		DestinationLongitude:  o.DeliveryLng,
 	}
 }

@@ -15,6 +15,7 @@ const (
 	OrderStatusPreparing OrderStatus = "preparing"
 	OrderStatusReady     OrderStatus = "ready"
 	OrderStatusAssigned  OrderStatus = "assigned"
+	OrderStatusOnTheWay  OrderStatus = "on_the_way"
 	OrderStatusPickedUp  OrderStatus = "picked_up"
 	OrderStatusDelivered OrderStatus = "delivered"
 	OrderStatusCancelled OrderStatus = "cancelled"

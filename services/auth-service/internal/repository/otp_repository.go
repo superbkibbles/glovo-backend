@@ -122,9 +122,9 @@ func (r *OTPRepository) SendEmailOTP(ctx context.Context, email, code string) er
 }
 
 func GenerateOTPCode() (string, error) {
-	n, err := rand.Int(rand.Reader, big.NewInt(1000000))
+	n, err := rand.Int(rand.Reader, big.NewInt(10000))
 	if err != nil {
 		return "", fmt.Errorf("failed to generate OTP code: %w", err)
 	}
-	return fmt.Sprintf("%06d", n.Int64()), nil
+	return fmt.Sprintf("%04d", n.Int64()), nil
 }

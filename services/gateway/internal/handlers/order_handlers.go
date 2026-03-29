@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/mendmzury/food-delivery/pkg/config"
@@ -16,42 +17,64 @@ import (
 // @Security BearerAuth
 // @Success 200 {object} object
 // @Router /orders [get]
+func parseOrderStatusesQuery(q string) []orderpb.OrderStatus {
+	q = strings.TrimSpace(q)
+	if q == "" {
+		return nil
+	}
+	var out []orderpb.OrderStatus
+	for _, p := range strings.Split(q, ",") {
+		p = strings.TrimSpace(strings.ToLower(p))
+		switch p {
+		case "pending":
+			out = append(out, orderpb.OrderStatus_ORDER_STATUS_PENDING)
+		case "accepted":
+			out = append(out, orderpb.OrderStatus_ORDER_STATUS_ACCEPTED)
+		case "preparing":
+			out = append(out, orderpb.OrderStatus_ORDER_STATUS_PREPARING)
+		case "ready":
+			out = append(out, orderpb.OrderStatus_ORDER_STATUS_READY)
+		case "assigned":
+			out = append(out, orderpb.OrderStatus_ORDER_STATUS_ASSIGNED)
+		case "on_the_way":
+			out = append(out, orderpb.OrderStatus_ORDER_STATUS_ON_THE_WAY)
+		case "picked_up":
+			out = append(out, orderpb.OrderStatus_ORDER_STATUS_PICKED_UP)
+		case "delivered":
+			out = append(out, orderpb.OrderStatus_ORDER_STATUS_DELIVERED)
+		case "cancelled":
+			out = append(out, orderpb.OrderStatus_ORDER_STATUS_CANCELLED)
+		}
+	}
+	return out
+}
+
 func ListOrders(cfg *config.Config, clients *grpc.Clients) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		page, pageSize := getPaginationParams(c)
 		customerID := c.Query("customer_id")
 		restaurantID := c.Query("restaurant_id")
 		driverID := c.Query("driver_id")
-		statusStr := c.Query("status")
-
-		status := orderpb.OrderStatus_ORDER_STATUS_PENDING
-		switch statusStr {
-		case "accepted":
-			status = orderpb.OrderStatus_ORDER_STATUS_ACCEPTED
-		case "preparing":
-			status = orderpb.OrderStatus_ORDER_STATUS_PREPARING
-		case "ready":
-			status = orderpb.OrderStatus_ORDER_STATUS_READY
-		case "assigned":
-			status = orderpb.OrderStatus_ORDER_STATUS_ASSIGNED
-		case "picked_up":
-			status = orderpb.OrderStatus_ORDER_STATUS_PICKED_UP
-		case "delivered":
-			status = orderpb.OrderStatus_ORDER_STATUS_DELIVERED
-		case "cancelled":
-			status = orderpb.OrderStatus_ORDER_STATUS_CANCELLED
-		default:
-			status = 0
+		if c.Query("role") == "driver" {
+			uid, ok := c.Get("user_id")
+			if !ok || uid == nil {
+				errorResponse(c, http.StatusUnauthorized, "missing user")
+				return
+			}
+			driverID = uid.(string)
 		}
 
-		ctx := getAuthContext(c)
-		resp, err := clients.Order.ListOrders(ctx, &orderpb.ListOrdersRequest{
+		statuses := parseOrderStatusesQuery(c.Query("status"))
+		req := &orderpb.ListOrdersRequest{
 			Pagination:   &commonpb.PaginationRequest{Page: page, PageSize: pageSize},
 			CustomerId:   customerID,
 			RestaurantId: restaurantID,
 			DriverId:     driverID,
-			Status:       status,
-		})
+			Statuses:     statuses,
+		}
+
+		ctx := getAuthContext(c)
+		resp, err := clients.Order.ListOrders(ctx, req)
 		if err != nil {
 			handleGRPCError(c, err)
 			return
@@ -158,6 +181,8 @@ func UpdateOrderStatus(cfg *config.Config, clients *grpc.Clients) gin.HandlerFun
 			status = orderpb.OrderStatus_ORDER_STATUS_READY
 		case "assigned":
 			status = orderpb.OrderStatus_ORDER_STATUS_ASSIGNED
+		case "on_the_way":
+			status = orderpb.OrderStatus_ORDER_STATUS_ON_THE_WAY
 		case "picked_up":
 			status = orderpb.OrderStatus_ORDER_STATUS_PICKED_UP
 		case "delivered":
@@ -193,6 +218,31 @@ func CancelOrder(cfg *config.Config, clients *grpc.Clients) gin.HandlerFunc {
 		id := c.Param("id")
 		ctx := getAuthContext(c)
 		order, err := clients.Order.CancelOrder(ctx, &orderpb.CancelOrderRequest{Id: id})
+		if err != nil {
+			handleGRPCError(c, err)
+			return
+		}
+		successResponse(c, order)
+	}
+}
+
+// AcceptOrder godoc
+// @Summary Driver accepts assigned order (moves to on_the_way)
+// @Tags orders
+// @Security BearerAuth
+// @Param id path string true "Order ID"
+// @Success 200 {object} object
+// @Router /orders/{id}/accept [post]
+func AcceptOrder(cfg *config.Config, clients *grpc.Clients) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		id := c.Param("id")
+		uid, ok := c.Get("user_id")
+		if !ok || uid == nil {
+			errorResponse(c, http.StatusUnauthorized, "missing user")
+			return
+		}
+		ctx := grpc.WithDriverID(getAuthContext(c), uid.(string))
+		order, err := clients.Order.AcceptOrder(ctx, &orderpb.AcceptOrderRequest{Id: id})
 		if err != nil {
 			handleGRPCError(c, err)
 			return
