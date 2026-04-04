@@ -46,6 +46,7 @@ type LoginResult struct {
 	RefreshToken string
 	ExpiresIn    int64
 	User         *UserInfo
+	IsNewUser    bool
 }
 
 type UserInfo struct {
@@ -488,12 +489,14 @@ func (s *AuthService) SignUpWithPhone(ctx context.Context, phone, otp string) (*
 		return nil, fmt.Errorf("invalid or expired OTP")
 	}
 
+	isNewUser := false
 	user, err := s.userRepo.GetByPhone(ctx, phone)
 	if err != nil {
 		return nil, fmt.Errorf("failed to find user: %w", err)
 	}
 
 	if user == nil {
+		isNewUser = true
 		customerRole, err := s.getCustomerRole(ctx)
 		if err != nil {
 			return nil, err
@@ -516,7 +519,12 @@ func (s *AuthService) SignUpWithPhone(ctx context.Context, phone, otp string) (*
 		return nil, fmt.Errorf("account is deactivated")
 	}
 
-	return s.buildLoginResult(ctx, user)
+	result, err := s.buildLoginResult(ctx, user)
+	if err != nil {
+		return nil, err
+	}
+	result.IsNewUser = isNewUser
+	return result, nil
 }
 
 // SignInWithPhone signs in user by phone after OTP verification
@@ -538,12 +546,14 @@ func (s *AuthService) SignUpWithEmail(ctx context.Context, email, otp, name stri
 		return nil, fmt.Errorf("invalid or expired OTP")
 	}
 
+	isNewUser := false
 	user, err := s.userRepo.GetByEmail(ctx, email)
 	if err != nil {
 		return nil, fmt.Errorf("failed to find user: %w", err)
 	}
 
 	if user == nil {
+		isNewUser = true
 		customerRole, err := s.getCustomerRole(ctx)
 		if err != nil {
 			return nil, err
@@ -567,7 +577,12 @@ func (s *AuthService) SignUpWithEmail(ctx context.Context, email, otp, name stri
 		return nil, fmt.Errorf("account is deactivated")
 	}
 
-	return s.buildLoginResult(ctx, user)
+	result, err := s.buildLoginResult(ctx, user)
+	if err != nil {
+		return nil, err
+	}
+	result.IsNewUser = isNewUser
+	return result, nil
 }
 
 // SignInWithEmail signs in user by email after OTP verification
@@ -597,21 +612,23 @@ func (s *AuthService) SignUpWithGoogle(ctx context.Context, idToken string) (*Lo
 		return nil, fmt.Errorf("failed to find user: %w", err)
 	}
 
+	isNewUser := false
 	if user == nil {
+		isNewUser = true
 		customerRole, err := s.getCustomerRole(ctx)
 		if err != nil {
 			return nil, err
 		}
 		username := "google:" + googleID
 		user = &domain.User{
-			ID:        uuid.New(),
-			Username:  username,
-			GoogleID:  googleID,
-			Name:      claims.Name,
-			Email:     claims.Email,
-			UserType:  "customer",
-			RoleID:    customerRole.ID,
-			Active:    true,
+			ID:       uuid.New(),
+			Username: username,
+			GoogleID: googleID,
+			Name:     claims.Name,
+			Email:    claims.Email,
+			UserType: "customer",
+			RoleID:   customerRole.ID,
+			Active:   true,
 		}
 		if err := s.userRepo.Create(ctx, user); err != nil {
 			return nil, fmt.Errorf("failed to create user: %w", err)
@@ -622,5 +639,10 @@ func (s *AuthService) SignUpWithGoogle(ctx context.Context, idToken string) (*Lo
 		return nil, fmt.Errorf("account is deactivated")
 	}
 
-	return s.buildLoginResult(ctx, user)
+	result, err := s.buildLoginResult(ctx, user)
+	if err != nil {
+		return nil, err
+	}
+	result.IsNewUser = isNewUser
+	return result, nil
 }

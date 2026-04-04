@@ -36,6 +36,7 @@ message LoginResponse {
   string refresh_token = 2;
   int64 expires_in = 3;
   UserInfo user = 4;
+  bool is_new_user = 5;
 }
 
 message UserInfo {

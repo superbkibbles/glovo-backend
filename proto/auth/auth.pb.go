@@ -79,6 +79,7 @@ type LoginResponse struct {
 	RefreshToken  string                 `protobuf:"bytes,2,opt,name=refresh_token,json=refreshToken,proto3" json:"refresh_token,omitempty"`
 	ExpiresIn     int64                  `protobuf:"varint,3,opt,name=expires_in,json=expiresIn,proto3" json:"expires_in,omitempty"`
 	User          *UserInfo              `protobuf:"bytes,4,opt,name=user,proto3" json:"user,omitempty"`
+	IsNewUser     bool                   `protobuf:"varint,5,opt,name=is_new_user,json=isNewUser,proto3" json:"is_new_user,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -139,6 +140,13 @@ func (x *LoginResponse) GetUser() *UserInfo {
 		return x.User
 	}
 	return nil
+}
+
+func (x *LoginResponse) GetIsNewUser() bool {
+	if x != nil {
+		return x.IsNewUser
+	}
+	return false
 }
 
 type UserInfo struct {
@@ -1244,13 +1252,14 @@ const file_proto_auth_auth_proto_rawDesc = "" +
 	"\x15proto/auth/auth.proto\x12\x04auth\"F\n" +
 	"\fLoginRequest\x12\x1a\n" +
 	"\busername\x18\x01 \x01(\tR\busername\x12\x1a\n" +
-	"\bpassword\x18\x02 \x01(\tR\bpassword\"\x8d\x01\n" +
+	"\bpassword\x18\x02 \x01(\tR\bpassword\"\xad\x01\n" +
 	"\rLoginResponse\x12\x14\n" +
 	"\x05token\x18\x01 \x01(\tR\x05token\x12#\n" +
 	"\rrefresh_token\x18\x02 \x01(\tR\frefreshToken\x12\x1d\n" +
 	"\n" +
 	"expires_in\x18\x03 \x01(\x03R\texpiresIn\x12\"\n" +
-	"\x04user\x18\x04 \x01(\v2\x0e.auth.UserInfoR\x04user\"\xdf\x02\n" +
+	"\x04user\x18\x04 \x01(\v2\x0e.auth.UserInfoR\x04user\x12\x1e\n" +
+	"\vis_new_user\x18\x05 \x01(\bR\tisNewUser\"\xdf\x02\n" +
 	"\bUserInfo\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1a\n" +
 	"\busername\x18\x02 \x01(\tR\busername\x12\x12\n" +

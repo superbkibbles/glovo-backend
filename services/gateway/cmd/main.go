@@ -99,6 +99,7 @@ func main() {
 		protected.Use(middleware.Auth(cfg))
 		{
 			protected.GET("/auth/me", handlers.GetCurrentUser(cfg, grpcClients))
+			protected.PUT("/auth/profile", handlers.UpdateMyProfile(cfg, grpcClients))
 			protected.POST("/auth/change-password", handlers.ChangePassword(cfg, grpcClients))
 			protected.POST("/auth/logout", handlers.Logout(cfg, grpcClients))
 

@@ -160,6 +160,7 @@ func toLoginResponse(result *application.LoginResult) *authpb.LoginResponse {
 		RefreshToken: result.RefreshToken,
 		ExpiresIn:    result.ExpiresIn,
 		User:         toUserInfo(result.User),
+		IsNewUser:    result.IsNewUser,
 	}
 }
 

@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/mendmzury/food-delivery/pkg/config"
 	authpb "github.com/mendmzury/food-delivery/proto/auth"
+	userpb "github.com/mendmzury/food-delivery/proto/user"
 	"github.com/mendmzury/food-delivery/services/gateway/internal/grpc"
 )
 
@@ -33,6 +34,7 @@ func authSuccessResponse(c *gin.Context, resp *authpb.LoginResponse) {
 		"refresh_token": resp.RefreshToken,
 		"expires_in":    resp.ExpiresIn,
 		"user":          authUserResponse(resp.User),
+		"is_new_user":   resp.IsNewUser,
 	})
 }
 
@@ -184,6 +186,48 @@ func Logout(cfg *config.Config, clients *grpc.Clients) gin.HandlerFunc {
 			return
 		}
 		successResponse(c, gin.H{"message": "logged out successfully"})
+	}
+}
+
+// UpdateMyProfile godoc
+// @Summary Update current user's profile
+// @Description Lets any authenticated user update their own name and profile photo
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param request body object{name=string,profile_photo=string} true "Profile fields"
+// @Success 200 {object} object
+// @Router /auth/profile [put]
+func UpdateMyProfile(cfg *config.Config, clients *grpc.Clients) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		userID, exists := c.Get("user_id")
+		if !exists || userID == "" {
+			errorResponse(c, http.StatusUnauthorized, "missing user identity")
+			return
+		}
+		var req struct {
+			Name         *string `json:"name"`
+			ProfilePhoto *string `json:"profile_photo"`
+		}
+		if err := c.ShouldBindJSON(&req); err != nil {
+			errorResponse(c, http.StatusBadRequest, "invalid request")
+			return
+		}
+		updateReq := &userpb.UpdateUserRequest{Id: userID.(string)}
+		if req.Name != nil {
+			updateReq.Name = req.Name
+		}
+		if req.ProfilePhoto != nil {
+			updateReq.ProfilePhoto = req.ProfilePhoto
+		}
+		ctx := getAuthContext(c)
+		user, err := clients.User.UpdateUser(ctx, updateReq)
+		if err != nil {
+			handleGRPCError(c, err)
+			return
+		}
+		successResponse(c, user)
 	}
 }
 
