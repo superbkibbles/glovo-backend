@@ -53,3 +53,4 @@ coverage/
 
 # Tilt / Helm (local state)
 .tilt/
+.build/

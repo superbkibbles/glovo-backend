@@ -1,0 +1,7 @@
+FROM alpine:latest
+ARG SERVICE_NAME
+RUN apk --no-cache add ca-certificates tzdata
+WORKDIR /app
+COPY ${SERVICE_NAME} .
+RUN adduser -D -g '' appuser && chown appuser /app/${SERVICE_NAME}
+USER appuser
